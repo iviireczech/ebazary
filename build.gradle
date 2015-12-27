@@ -40,6 +40,8 @@ dependencies {
     //runtime('org.postgresql:postgresql')
     compile('org.webjars:bootstrap:3.3.6')
     compile('org.webjars:jquery:2.1.4')
+    compile('org.jsoup:jsoup:1.8.3')
+    compile('joda-time:joda-time:2.9.1')
     providedCompile('org.projectlombok:lombok:1.16.6')
     providedRuntime('org.springframework.boot:spring-boot-starter-tomcat')
     testCompile('org.springframework.boot:spring-boot-starter-test') 
