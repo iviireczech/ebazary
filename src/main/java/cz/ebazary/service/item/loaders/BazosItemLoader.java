@@ -3,13 +3,13 @@ package cz.ebazary.service.item.loaders;
 import cz.ebazary.model.bazaar.BazaarType;
 import cz.ebazary.model.bazaar.category.Category;
 import cz.ebazary.model.bazaar.locality.District;
-import cz.ebazary.model.bazaar.locality.Locality;
+import cz.ebazary.model.bazaar.locality.ItemLocality;
 import cz.ebazary.model.item.Item;
 import cz.ebazary.model.item.ItemCurrency;
+import cz.ebazary.model.item.ItemPrice;
 import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -17,7 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,7 +25,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class BazosItemLoader implements Loadable {
+public class BazosItemLoader extends AbstractItemLoader {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BazosItemLoader.class);
 
@@ -43,7 +42,7 @@ public class BazosItemLoader implements Loadable {
 
     private static final String DATE_PATTERN = "dd.MM.yyyy";
     private static final Pattern REGION_PATTERN = Pattern.compile("\\d{3} \\d{2} (.*)");
-    private static final Pattern OFFER_PATTERN = Pattern.compile("-( TOP -)? Nabídka - \\[(\\d{1,2}.\\d{2}. \\d{4})\\]");
+    private static final Pattern OFFER_PATTERN = Pattern.compile("-( TOP -)? Nabídka - \\[(\\d{1,2}.\\d{1,2}. \\d{4})\\]");
 
     private static final Map<Category, List<String>> CATEGORY_URLS = new HashMap<>();
 
@@ -182,82 +181,83 @@ public class BazosItemLoader implements Loadable {
     }
 
     @Override
-    public List<Item> loadItems(final LocalDate from) {
-        final List<Item> items = new ArrayList<>();
-        try {
+    protected List<String> getCategoryUrls(final Category category) {
 
-            int i = 0;
-            LocalDate current = LocalDate.now();
-            while (!current.isBefore(from)){
-                for (Map.Entry<Category, List<String>> categoryUrlsEntry : CATEGORY_URLS.entrySet()) {
-                    for (String mainUrl : categoryUrlsEntry.getValue()) {
-                        final Document main = Jsoup.connect(mainUrl + "/" + i).get();
-                        i += 15;
+        return CATEGORY_URLS.get(category);
 
-                        final Elements rows = main.select(DETAIL_SELECTOR);
-                        for (Element row : rows) {
-                            final Elements type = row.select("span.velikost10");
-                            if (OFFER_PATTERN.matcher(type.text()).matches()) {
-                                if (mainUrl.lastIndexOf('/') > 6) {
-                                    mainUrl = mainUrl.substring(0, mainUrl.lastIndexOf('/'));
-                                }
-                                final String itemUrl = mainUrl + row.select("td").get(0).select("a").attr("href");
+    }
 
-                                final Document detail = Jsoup.connect(itemUrl).get();
+    @Override
+    protected String getCategoryPageUrl(final String categoryUrl, final int page) {
 
-                                try {
-                                    final Item item = new Item();
-                                    item.setBazaarType(BazaarType.bazos);
-                                    item.setUrl(itemUrl);
+        return categoryUrl + "/" + (page * 15);
 
-                                    setPrice(detail, item);
-                                    setDescription(detail, item);
-                                    setPhone(detail, item);
-                                    setLocality(detail, item);
-                                    setInsertionDate(detail, item);
-                                    setMainImageUrl(detail, item);
-                                    setOtherImagesUrl(detail, item);
+    }
 
-                                    LOGGER.debug(item.toString());
+    @Override
+    protected List<String> getItemUrls(final Document categoryPage) {
 
-                                    items.add(item);
-                                } catch (Exception e) {
-                                    LOGGER.error(e.getMessage());
-                                }
-                            }
-                        }
-                    }
+        final List<String> itemUrls = new ArrayList<>();
+
+        String categoryPageUrl = categoryPage.location();
+
+        final Elements rows = categoryPage.select(DETAIL_SELECTOR);
+        for (Element row : rows) {
+            final Elements type = row.select("span.velikost10");
+            final String typeText =type.text();
+            if (OFFER_PATTERN.matcher(type.text()).matches()) {
+                if (categoryPageUrl.lastIndexOf('/') > 6) {
+                    categoryPageUrl = categoryPageUrl.substring(0, categoryPageUrl.lastIndexOf('/'));
                 }
-
+                final String itemUrl = categoryPageUrl + row.select("td").get(0).select("a").attr("href");
+                itemUrls.add(itemUrl);
             }
-
-        } catch (IOException e) {
-            LOGGER.error(e.getMessage());
         }
 
-        return items;
+        return itemUrls;
+
+    }
+
+    @Override
+    protected Item getItem(final Document itemPage) {
+
+        final Item item = new Item();
+        item.setBazaarType(BazaarType.bazos);
+        item.setUrl(itemPage.location());
+
+        setPrice(itemPage, item);
+        setDescription(itemPage, item);
+        setPhone(itemPage, item);
+        setLocality(itemPage, item);
+        setInsertionDate(itemPage, item);
+        setMainImageUrl(itemPage, item);
+        setOtherImagesUrl(itemPage, item);
+
+        return item;
 
     }
 
     private void setPrice(final Document document, final Item item) {
 
+        final ItemPrice itemPrice = new ItemPrice();
+
         final Element price = document.select("table").get(6).select("tbody > tr").get(2).select("td").get(1);
 
         if (NEGOTIATED_PRICE.equals(price.text()) || OFFER.equals(price.text())) {
-            item.setNegotiatedPrice(true);
+            itemPrice.setNegotiatedPrice(true);
         } else if (IN_TEXT_PRICE.equals(price.text())) {
-            item.setPriceInDescription(true);
+            itemPrice.setPriceInDescription(true);
         } else if (FREE_PRICE.equals(price.text())) {
-            item.setPrice(BigDecimal.ZERO);
+            itemPrice.setPrice(BigDecimal.ZERO);
         } else if (PRICE_DOES_NOT_MATTER.equals(price.text())) {
-            item.setNegotiatedPrice(true);
+            itemPrice.setNegotiatedPrice(true);
         } else {
             final String priceValue = StringUtils.trimAllWhitespace(price.text().substring(0, price.text().lastIndexOf(" ")));
             if (isNumeric(priceValue)) {
-                item.setPrice(new BigDecimal(priceValue));
+                itemPrice.setPrice(new BigDecimal(priceValue));
 
                 final String currency = price.text().substring(price.text().lastIndexOf(" ") + 1, price.text().length());
-                item.setCurrency(
+                itemPrice.setCurrency(
                         ItemCurrency
                                 .findByName(currency)
                                 .orElseThrow(() -> new IllegalArgumentException("Currency " + currency + " not recognized"))
@@ -266,9 +266,11 @@ public class BazosItemLoader implements Loadable {
             }
         }
 
-        if (item.getPrice() == null && !item.isNegotiatedPrice() && !item.isPriceInDescription()) {
+        if (itemPrice.getPrice() == null && !itemPrice.isNegotiatedPrice() && !itemPrice.isPriceInDescription()) {
             throw new IllegalStateException(price.text());
         }
+
+        item.setItemPrice(itemPrice);
 
     }
 
@@ -304,9 +306,9 @@ public class BazosItemLoader implements Loadable {
                             .orElseThrow(() -> new IllegalArgumentException("Disctrict " + address.text() + " not recognized"));
         }
 
-        final Locality locality = new Locality();
-        locality.setDistrict(district);
-        item.setLocality(locality);
+        final ItemLocality itemLocality = new ItemLocality();
+        itemLocality.setDistrict(district);
+        item.setItemLocality(itemLocality);
 
 
     }

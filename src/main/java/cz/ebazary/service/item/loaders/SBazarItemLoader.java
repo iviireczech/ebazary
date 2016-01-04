@@ -3,21 +3,18 @@ package cz.ebazary.service.item.loaders;
 import cz.ebazary.model.bazaar.BazaarType;
 import cz.ebazary.model.bazaar.category.Category;
 import cz.ebazary.model.bazaar.locality.District;
-import cz.ebazary.model.bazaar.locality.Locality;
+import cz.ebazary.model.bazaar.locality.ItemLocality;
 import cz.ebazary.model.item.Item;
 import cz.ebazary.model.item.ItemCurrency;
+import cz.ebazary.model.item.ItemPrice;
 import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,17 +22,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
-public class SBazarItemLoader implements Loadable {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(SBazarItemLoader.class);
+public class SBazarItemLoader extends AbstractItemLoader {
 
     private static final String ROOT_URL = "http://www.sbazar.cz";
     private static final String DETAIL_URL = "/cela-cr/cena-neomezena/nejnovejsi/";
 
     private static final String DETAIL_SELECTOR = "a[href].mrEggPart";
     private static final String PRICE_SELECTOR = "span[itemprop=price]";
-    private static final String CURRENCY_SELECTOR = "span.currency";
+    private static final String CURRENCY_SELECTOR = "span[itemprop=price] > span.currency";
     private static final String DESCRIPTION_SELECTOR = "div.description";
     private static final String PHONE_SELECTOR = "span[itemprop=telephone]";
     private static final String ADDRESS_SELECTOR = "span[itemprop=addressRegion]";
@@ -154,70 +150,70 @@ public class SBazarItemLoader implements Loadable {
     }
 
     @Override
-    public List<Item> loadItems(final LocalDate from) {
-        final List<Item> items = new ArrayList<>();
-        try {
+    protected List<String> getCategoryUrls(final Category category) {
 
-            int i = 0;
-            LocalDate current = LocalDate.now();
-            while (!current.isBefore(from)){
-                for (Map.Entry<Category, List<String>> categoryUrlsEntry : CATEGORY_URLS.entrySet()) {
-                    for (String mainUrl : categoryUrlsEntry.getValue()) {
-                        final Document main = Jsoup.connect(mainUrl + DETAIL_URL + i++).get();
-                        final Elements links = main.select(DETAIL_SELECTOR);
-                        for (Element link : links) {
-                            final String itemUrl = ROOT_URL + link.attr("href");
-                            final Document detail = Jsoup.connect(itemUrl).get();
+        return CATEGORY_URLS.get(category);
 
-                            final Item item = new Item();
-                            item.setBazaarType(BazaarType.sbazar);
-                            item.setUrl(itemUrl);
+    }
 
-                            setPrice(detail, item);
-                            setDescription(detail, item);
-                            setPhone(detail, item);
-                            setLocality(detail, item);
-                            setInsertionDate(detail, item);
-                            setMainImageUrl(detail, item);
-                            setOtherImagesUrl(detail, item);
+    @Override
+    protected String getCategoryPageUrl(final String categoryUrl, final int page) {
 
-                            LOGGER.debug(item.toString());
+        return categoryUrl + DETAIL_URL + page;
 
-                            items.add(item);
-                        }
-                    }
-                }
+    }
 
-            }
+    @Override
+    protected List<String> getItemUrls(final Document categoryPage) {
 
-        } catch (IOException e) {
-            LOGGER.error(e.getMessage());
-        }
+        final Elements links = categoryPage.select(DETAIL_SELECTOR);
+        return links.stream().map(link -> ROOT_URL + link.attr("href")).collect(Collectors.toList());
 
-        return items;
+    }
+
+    @Override
+    protected Item getItem(final Document itemPage) {
+
+        final Item item = new Item();
+        item.setBazaarType(BazaarType.sbazar);
+        item.setUrl(itemPage.location());
+
+        setPrice(itemPage, item);
+        setDescription(itemPage, item);
+        setPhone(itemPage, item);
+        setLocality(itemPage, item);
+        setInsertionDate(itemPage, item);
+        setMainImageUrl(itemPage, item);
+        setOtherImagesUrl(itemPage, item);
+
+        return item;
 
     }
 
     private void setPrice(final Document document, final Item item) {
 
+        final ItemPrice itemPrice = new ItemPrice();
+
         final Elements price = document.select(PRICE_SELECTOR);
 
         final String priceString = price.first().textNodes().get(0).text().replace(NO_BREAK_SPACE,"");
         if (isNumeric(priceString)) {
-            item.setPrice(new BigDecimal(priceString));
+            itemPrice.setPrice(new BigDecimal(priceString));
 
             final Elements currency = document.select(CURRENCY_SELECTOR);
-            item.setCurrency(
+            itemPrice.setCurrency(
                     ItemCurrency
                             .findByName(currency.text())
                             .orElseThrow(() -> new IllegalArgumentException("Currency " + currency + " not recognized"))
             );
 
         } else if (NEGOTIATED_PRICE.equals(priceString)) {
-            item.setNegotiatedPrice(true);
+            itemPrice.setNegotiatedPrice(true);
         } else if (TO_LEAVE.equals(priceString) || FREE_PRICE.equals(priceString)) {
-            item.setPrice(BigDecimal.ZERO);
+            itemPrice.setPrice(BigDecimal.ZERO);
         }
+
+        item.setItemPrice(itemPrice);
 
     }
 
@@ -253,9 +249,9 @@ public class SBazarItemLoader implements Loadable {
                             .orElseThrow(() -> new IllegalArgumentException("Disctrict " + address.text() + " not recognized"));
         }
 
-        final Locality locality = new Locality();
-        locality.setDistrict(district);
-        item.setLocality(locality);
+        final ItemLocality itemLocality = new ItemLocality();
+        itemLocality.setDistrict(district);
+        item.setItemLocality(itemLocality);
 
     }
 

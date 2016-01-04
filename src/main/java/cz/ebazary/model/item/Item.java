@@ -1,28 +1,44 @@
 package cz.ebazary.model.item;
 
 import cz.ebazary.model.bazaar.BazaarType;
+import cz.ebazary.model.bazaar.locality.ItemLocality;
 import cz.ebazary.model.bazaar.locality.Locality;
 import lombok.Data;
+import org.hibernate.validator.constraints.NotBlank;
 import org.joda.time.LocalDate;
 
-import java.math.BigDecimal;
+import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
 @Data
 public class Item {
+
+    @NotNull
     private BazaarType bazaarType;
+
+    @NotBlank
     private String url;
+
+    @NotNull
     private LocalDate insertionDate;
+
+    @NotBlank
     private String description;
-    private BigDecimal price;
-    private ItemCurrency currency;
-    private boolean negotiatedPrice;
-    private boolean priceInDescription;
+
+    @Price
+    private ItemPrice itemPrice;
+
     private String mainImageUrl;
+
+    @NotNull
     private List<String> otherImagesUrl;
-    private Locality locality;
+
+    @Locality
+    private ItemLocality itemLocality;
+
     private String phoneNumber;
+
     private String email;
 
     public Item() {

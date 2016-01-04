@@ -1,4 +1,4 @@
-package cz.ebazary.model.bazaar.locality;
+package cz.ebazary.model.item;
 
 import javax.validation.Constraint;
 import javax.validation.Payload;
@@ -7,10 +7,10 @@ import java.lang.annotation.*;
 
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = ItemLocalityValidator.class)
+@Constraint(validatedBy = ItemPriceValidator.class)
 @Documented
 @NotNull
-public @interface Locality {
+public @interface Price {
 
     String message() default "";
 
