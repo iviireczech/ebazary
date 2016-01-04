@@ -113,7 +113,7 @@ public enum District {
             } else {
                 correctedName = name.replaceAll(" ", "-");
             }
-        } else if (name.matches("Praha \\d+")) {
+        } else if (name.matches("Praha .*")) {
             correctedName = AB.getName();
         } else if (name.matches("Praha [^0-9]+")) {
             if (name.contains("-")) {
@@ -127,6 +127,8 @@ public enum District {
             } else {
                 correctedName = name.replaceAll(" ", "-");
             }
+        } else if (name.matches("Ostrava.*")){
+            correctedName = OV.getName();
         } else {
             correctedName = name;
         }
