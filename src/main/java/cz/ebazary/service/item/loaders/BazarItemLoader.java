@@ -12,6 +12,7 @@ import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +31,7 @@ public class BazarItemLoader extends AbstractItemLoader {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BazarItemLoader.class);
 
-    private static final String DETAIL_SELECTOR = "div.text";
+    private static final String DETAIL_SELECTOR = "div.text, div.inz";
     private static final String DATE_SELECTOR = "span.velikost10";
     private static final String MAIN_IMAGE_SELECTOR = "img#imgPrim";
     private static final String OTHER_IMAGES_SELECTOR = "input[id~=^hImg[2-9]\\d*";
@@ -39,7 +40,8 @@ public class BazarItemLoader extends AbstractItemLoader {
     private static final String IN_TEXT_PRICE = "V textu";
     private static final String OFFER = "Nabídněte";
     private static final String FREE_PRICE = "Zdarma";
-    private static final String PRICE_NOT_LISTED = "neuvedena";
+    private static final String NOT_LISTED = "neuvedena";
+    private static final String PRICE_NOT_LISTED = "cena neuvedena";
 
     private static final String DATE_PATTERN = "dd.MM.yyyy";
     private static final Pattern REGION_PATTERN = Pattern.compile("\\d{3} \\d{2} (.*)");
@@ -156,10 +158,24 @@ public class BazarItemLoader extends AbstractItemLoader {
 
         final Elements rows = categoryPage.select(DETAIL_SELECTOR);
         for (Element row : rows) {
-            final String type = row.select("div.kat").first().textNodes().get(0).text();
-            if (", Nabídka ".equals(type)) {
-                final String itemUrl = row.select("h2.nulink > a").attr("href");
-                itemUrls.add(itemUrl);
+            final Elements divs = row.select("div.kat, div.inztop");
+            if (!divs.isEmpty()) {
+                final String address = divs.first().select("span[title]").attr("title");
+                final Pattern pattern = Pattern.compile("(.*) \\\\ .* \\\\ .*");
+                final Matcher m = pattern.matcher(address);
+                if (m.matches()) {
+                    if (!"Slovensko".equals(m.group(1)) && !"Zahraničí".equals(m.group(1))) {
+                        final List<TextNode> textNodes = divs.first().textNodes();
+                        for (final TextNode textNode : textNodes) {
+                            if (textNode.text().matches(".*Nabídka.*")) {
+                                final Elements select = row.select("h2.nulink > a, div.inz-right > div > h2 > a");
+                                final String itemUrl = select.attr("href");
+                                itemUrls.add(itemUrl);
+                                break;
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -191,29 +207,59 @@ public class BazarItemLoader extends AbstractItemLoader {
 
         final ItemPrice itemPrice = new ItemPrice();
 
-        final String currency = document.select("span.kc").text();
-        if (PRICE_NOT_LISTED.equals(currency)) {
-            itemPrice.setNegotiatedPrice(true);
-        } else {
-            final String price = document.select("span.cena").get(0).textNodes().get(0).text();
+        final Elements currency = document.select("span.kc");
+        if (!currency.isEmpty()) {
+            if (NOT_LISTED.equals(currency.text())) {
+                itemPrice.setNegotiatedPrice(true);
+            } else {
+                final String price = document.select("span.cena").get(0).textNodes().get(0).text();
 
-            final String priceValue = StringUtils.trimAllWhitespace(price.replace(NO_BREAK_SPACE, ""));
+                final String priceValue = StringUtils.trimAllWhitespace(price.replace(NO_BREAK_SPACE, ""));
 
-            if (isNumeric(priceValue)) {
-                itemPrice.setPrice(new BigDecimal(priceValue));
+                if (isNumeric(priceValue)) {
+                    itemPrice.setPrice(new BigDecimal(priceValue));
 
-                itemPrice.setCurrency(
-                        ItemCurrency
-                                .findByName(currency)
-                                .orElseThrow(() -> new IllegalArgumentException("Currency " + currency + " not recognized"))
-                );
+                    itemPrice.setCurrency(
+                            ItemCurrency
+                                    .findByName(currency.text())
+                                    .orElseThrow(() -> new IllegalArgumentException("Currency " + currency + " not recognized"))
+                    );
+
+                }
 
             }
 
-        }
+            if (itemPrice.getPrice() == null && !itemPrice.isNegotiatedPrice() && !itemPrice.isPriceInDescription()) {
+                throw new IllegalStateException(currency.text());
+            }
 
-        if (itemPrice.getPrice() == null && !itemPrice.isNegotiatedPrice() && !itemPrice.isPriceInDescription()) {
-            throw new IllegalStateException(currency);
+        } else {
+            final String price = document.select("span.cena").get(0).textNodes().get(0).text();
+            if (PRICE_NOT_LISTED.equals(price)) {
+                itemPrice.setNegotiatedPrice(true);
+            } else {
+
+                final String priceValue =
+                        StringUtils.trimAllWhitespace(price.substring(0, price.lastIndexOf(NO_BREAK_SPACE)).replace(NO_BREAK_SPACE, ""));
+                final String priceCurrency =
+                        StringUtils.trimAllWhitespace(price.substring(price.lastIndexOf(NO_BREAK_SPACE) + 1).replace(NO_BREAK_SPACE, ""));
+
+                if (isNumeric(priceValue)) {
+                    itemPrice.setPrice(new BigDecimal(priceValue));
+
+                    itemPrice.setCurrency(
+                            ItemCurrency
+                                    .findByName(priceCurrency)
+                                    .orElseThrow(() -> new IllegalArgumentException("Currency " + currency + " not recognized"))
+                    );
+
+                }
+            }
+
+            if (itemPrice.getPrice() == null && !itemPrice.isNegotiatedPrice() && !itemPrice.isPriceInDescription()) {
+                throw new IllegalStateException(price);
+            }
+
         }
 
         item.setItemPrice(itemPrice);
@@ -222,7 +268,7 @@ public class BazarItemLoader extends AbstractItemLoader {
 
     private void setDescription(final Document document, final Item item) {
 
-        final Elements description = document.select("div.text");
+        final Elements description = document.select("div.text, p.text-justify");
         item.setDescription(description.text());
 
         if (StringUtils.isEmpty(item.getDescription())) {
@@ -234,7 +280,18 @@ public class BazarItemLoader extends AbstractItemLoader {
     private void setPhone(final Document document, final Item item) {
 
         final Elements phone = document.select("span.telefon");
-        item.setPhoneNumber(StringUtils.isEmpty(phone.text()) ? null : phone.text());
+        if (!phone.isEmpty()) {
+            item.setPhoneNumber(StringUtils.isEmpty(phone.text()) ? null : phone.text());
+        } else {
+            final Elements tds = document.select("table#atributy > tbody > tr > td");
+            for (int i = 0; i < tds.size(); i++) {
+                final Element td = tds.get(i);
+                if ("Telefon:".equals(td.text())) {
+                    item.setPhoneNumber(tds.get(i + 1).text());
+                    break;
+                }
+            }
+        }
 
         if (StringUtils.isEmpty(item.getPhoneNumber())) {
             LOGGER.warn("Empty phone number");
@@ -257,33 +314,60 @@ public class BazarItemLoader extends AbstractItemLoader {
 
     private void setLocality(final Document document, final Item item) {
 
-        final Elements tds = document.select("table#atributy > tbody > tr > td");
-        for (int i = 0; i < tds.size(); i++) {
-            final Element td = tds.get(i);
-            if ("Region:".equals(td.text())) {
-                final Pattern pattern = Pattern.compile(".* \\\\ (.*) \\\\ .*");
-                final String address = tds.get(i + 1).select("span").attr("title");
-                final Matcher m = pattern.matcher(address);
-                if (m.matches()) {
-                    final Matcher matcher = REGION_PATTERN.matcher(m.group(1));
+        final Elements divKat = document.select("div.kat");
+        if (!divKat.isEmpty()) {
+            final Pattern pattern = Pattern.compile(".* \\\\ (.*) \\\\ .*");
+            final String address = divKat.select("span").attr("title");
+            final Matcher m = pattern.matcher(address);
+            if (m.matches()) {
+                final Matcher matcher = REGION_PATTERN.matcher(m.group(1));
 
-                    final District district;
-                    if (matcher.matches()) {
-                        district =
-                                District
-                                        .findByName(matcher.group(1))
-                                        .orElseThrow(() -> new IllegalArgumentException("Disctrict " + matcher.group(1) + " not recognized"));
-                    } else {
-                        district =
-                                District
-                                        .findByName(m.group(1))
-                                        .orElseThrow(() -> new IllegalArgumentException("Disctrict " + m.group(1) + " not recognized"));
+                final District district;
+                if (matcher.matches()) {
+                    district =
+                            District
+                                    .findByName(matcher.group(1))
+                                    .orElseThrow(() -> new IllegalArgumentException("Disctrict " + matcher.group(1) + " not recognized"));
+                } else {
+                    district =
+                            District
+                                    .findByName(m.group(1))
+                                    .orElseThrow(() -> new IllegalArgumentException("Disctrict " + m.group(1) + " not recognized"));
+                }
+
+                final ItemLocality itemLocality = new ItemLocality();
+                itemLocality.setDistrict(district);
+                item.setItemLocality(itemLocality);
+            }
+        } else {
+            final Elements tds = document.select("table#atributy > tbody > tr > td");
+            for (int i = 0; i < tds.size(); i++) {
+                final Element td = tds.get(i);
+                if ("Region:".equals(td.text())) {
+                    final Pattern pattern = Pattern.compile(".* \\\\ (.*) \\\\ .*");
+                    final String address = tds.get(i + 1).select("span").attr("title");
+                    final Matcher m = pattern.matcher(address);
+                    if (m.matches()) {
+                        final Matcher matcher = REGION_PATTERN.matcher(m.group(1));
+
+                        final District district;
+                        if (matcher.matches()) {
+                            district =
+                                    District
+                                            .findByName(matcher.group(1))
+                                            .orElseThrow(() -> new IllegalArgumentException("Disctrict " + matcher.group(1) + " not recognized"));
+                        } else {
+                            district =
+                                    District
+                                            .findByName(m.group(1))
+                                            .orElseThrow(() -> new IllegalArgumentException("Disctrict " + m.group(1) + " not recognized"));
+                        }
+
+                        final ItemLocality itemLocality = new ItemLocality();
+                        itemLocality.setDistrict(district);
+                        item.setItemLocality(itemLocality);
+                        break;
                     }
-
-                    final ItemLocality itemLocality = new ItemLocality();
-                    itemLocality.setDistrict(district);
-                    item.setItemLocality(itemLocality);
-                    break;
                 }
             }
         }
@@ -297,14 +381,26 @@ public class BazarItemLoader extends AbstractItemLoader {
 
     private void setInsertionDate(final Document document, final Item item) {
 
-        final Elements tds = document.select("table#atributy > tbody > tr > td");
-        for (int i = 0; i < tds.size(); i++) {
-            final Element td = tds.get(i);
-            if ("Aktualizováno:".equals(td.text())) {
-                final String date = tds.get(i + 1).text();
+        final Elements divKat = document.select("div.kat");
+        if (!divKat.isEmpty()) {
+            final String date = divKat.get(0).textNodes().get(0).text();
+            final Pattern pattern = Pattern.compile(" / (\\d{1,2}.\\d{1,2}.\\d{4}) / .*");
+            final Matcher matcher = pattern.matcher(date);
+            if (matcher.matches()) {
                 final DateTimeFormatter formatter = DateTimeFormat.forPattern(DATE_PATTERN);
-                final LocalDate localDate = formatter.parseLocalDate(StringUtils.trimAllWhitespace(date));
+                final LocalDate localDate = formatter.parseLocalDate(matcher.group(1));
                 item.setInsertionDate(localDate);
+            }
+        } else {
+            final Elements tds = document.select("table#atributy > tbody > tr > td");
+            for (int i = 0; i < tds.size(); i++) {
+                final Element td = tds.get(i);
+                if ("Aktualizováno:".equals(td.text())) {
+                    final String date = tds.get(i + 1).text();
+                    final DateTimeFormatter formatter = DateTimeFormat.forPattern(DATE_PATTERN);
+                    final LocalDate localDate = formatter.parseLocalDate(StringUtils.trimAllWhitespace(date));
+                    item.setInsertionDate(localDate);
+                }
             }
         }
 
@@ -316,9 +412,14 @@ public class BazarItemLoader extends AbstractItemLoader {
 
     private void setMainImageUrl(final Document document, final Item item) {
 
-        final Elements image = document.select("div#gallery > table");
-        if(!image.isEmpty()) {
-            item.setMainImageUrl("http://auta.bazar.cz" + image.select("tbody > tr").get(0).select("td").get(0).select("a").attr("href"));
+        final Elements divPrintOn = document.select("div.printon");
+        if (!divPrintOn.isEmpty()) {
+            item.setMainImageUrl("www.bazar.cz/" + divPrintOn.select("img").attr("src"));
+        } else {
+            final Elements image = document.select("div#gallery > table");
+            if(!image.isEmpty()) {
+                item.setMainImageUrl("www.bazar.cz/" + image.select("tbody > tr").get(0).select("td").get(0).select("a").attr("href"));
+            }
         }
 
         if (StringUtils.isEmpty(item.getMainImageUrl())) {
@@ -329,9 +430,19 @@ public class BazarItemLoader extends AbstractItemLoader {
 
     private void setOtherImagesUrl(final Document document, final Item item) {
 
-        final Elements images = document.select("table.foto > tbody > tr > td > a");
-        for (Element img : images) {
-            item.getOtherImagesUrl().add("http://auta.bazar.cz" + img.attr("href"));
+        final Elements divPrintOff = document.select("div.printoff");
+        if (!divPrintOff.isEmpty()) {
+            final Elements images = divPrintOff.select("img");
+            if (images.size() > 1) {
+                for (int i = 1; i < images.size(); i++) {
+                    item.getOtherImagesUrl().add("www.bazar.cz/" + images.get(i).attr("src"));
+                }
+            }
+        } else {
+            final Elements images = document.select("table.foto > tbody > tr > td > a");
+            for (Element img : images) {
+                item.getOtherImagesUrl().add("www.bazar.cz/" + img.attr("href"));
+            }
         }
 
         if (CollectionUtils.isEmpty(item.getOtherImagesUrl())) {
