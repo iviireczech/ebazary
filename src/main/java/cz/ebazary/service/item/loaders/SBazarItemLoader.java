@@ -227,7 +227,7 @@ public class SBazarItemLoader extends AbstractItemLoader {
     private void setPhone(final Document document, final Item item) {
 
         final Elements phone = document.select(PHONE_SELECTOR);
-        item.setPhoneNumber(StringUtils.isEmpty(phone.text()) ? null : phone.text());
+        item.setPhoneNumber(StringUtils.isEmpty(phone.text()) ? null : StringUtils.trimAllWhitespace(phone.text()));
 
     }
 
@@ -268,7 +268,7 @@ public class SBazarItemLoader extends AbstractItemLoader {
 
         final Elements image = document.select(MAIN_IMAGE_SELECTOR);
         if(!image.isEmpty()) {
-            item.setMainImageUrl(image.attr("src").substring(2));
+            item.setMainImageUrl("http://" + image.attr("src").substring(2));
         }
 
     }
