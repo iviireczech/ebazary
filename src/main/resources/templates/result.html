@@ -3,6 +3,8 @@
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 
+        <link type="text/css" href="css/index.css" rel="stylesheet" media="screen" />
+
         <link href="http://cdn.jsdelivr.net/webjars/bootstrap/3.3.4/css/bootstrap.min.css"
               th:href="@{/webjars/bootstrap/3.3.6/css/bootstrap.min.css}"
               rel="stylesheet" media="screen" />
@@ -13,7 +15,49 @@
         <title>ebazary.cz</title>
     </head>
     <body>
-        <h1>Result</h1>
-        <p th:text="'query: ' + ${userRequest.query}" />
+        <div class="container">
+            <table class="table table-bordered table-striped">
+                <tr th:each="item : ${items}" class="item-row">
+                    <td><img th:src="${item.mainImageUrl} != null ? ${item.mainImageUrl} : 'images/image_missing.jpg'" class="img-responsive img-thumbnail"/></td>
+                    <td>
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div th:text="${#strings.length(item.description) le 297 ? item.description : #strings.substring(item.description, 0, 297) + '...'}">1</div>
+                                <br/>
+                            </div>
+                            <div class="col-md-2 col-md-offset-1">
+                                <div><b th:text="${item.itemPrice.price} != null ? ${item.itemPrice.price} + ' ' + ${item.itemPrice.currency.name} : (${item.itemPrice.negotiatedPrice} ? 'Dohodou' : 'V textu')"></b></div>
+                                <br/>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-8">
+                               <table class="table table-bordered table-condensed transparent">
+                                   <tr>
+                                       <td>Datum:</td>
+                                       <td><span th:text="${item.insertionDate}" class="nowrap"/></td>
+                                   </tr>
+                                   <tr>
+                                       <td>Místo:</td>
+                                       <td><span th:text="${item.itemLocality.district.name}" class="nowrap"/></td>
+                                   </tr>
+                                   <tr th:if="${item.phoneNumber != null}" th:remove="tag">
+                                       <td>Telefon:</td>
+                                       <td th:text="${item.phoneNumber}"></td>
+                                   </tr>
+                                   <tr th:if="${item.email != null}" th:remove="tag">
+                                       <td>Email:</td>
+                                       <td th:text="${item.email}"></td>
+                                   </tr>
+                               </table>
+                            </div>
+                            <div class="col-md-4">
+                                <a th:href="${item.url}" th:text="${'Kup na ' + item.bazaarType.name}" class="btn btn-info" role="button">Link Button</a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
     </body>
 </html>
