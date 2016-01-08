@@ -16,7 +16,7 @@
     <body>
         <div class="vcenter">
             <div class="col-sm-8 col-md-6 col-md-offset-3 input-group" style="min-width: 270px;">
-                <form action="#" th:action="@{/item}" th:object="${userRequest}" method="post">
+                <form action="#" th:action="@{/result}" th:object="${userRequest}" method="post">
                     <input type="text" class="form-control" th:field="*{query}" placeholder="Search for..." />
                     <span class="input-group-btn">
                         <input type="submit" class="btn btn-default" value="Go!" />
