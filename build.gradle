@@ -6,10 +6,12 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}") 
+        classpath "io.spring.gradle:dependency-management-plugin:0.5.4.RELEASE"
+        classpath "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}"
     }
 }
 
+apply plugin: 'io.spring.dependency-management'
 apply plugin: 'java'
 apply plugin: 'idea'
 apply plugin: 'spring-boot' 
@@ -28,6 +30,7 @@ repositories {
 }
 
 configurations {
+    all*.exclude module: 'spring-boot-starter-logging'
     providedRuntime
 }
 
@@ -42,9 +45,16 @@ dependencies {
     compile('org.webjars:jquery:2.1.4')
     compile('org.jsoup:jsoup:1.8.3')
     compile('joda-time:joda-time:2.9.1')
+
+    compile ('org.springframework.boot:spring-boot-starter-log4j2')
+    compile ('org.jboss.logging:jboss-logging')
+    compile ('org.apache.logging.log4j:log4j-web:2.5')
+
     providedCompile('org.projectlombok:lombok:1.16.6')
+
     providedRuntime('org.springframework.boot:spring-boot-starter-tomcat')
-    testCompile('org.springframework.boot:spring-boot-starter-test') 
+
+    testCompile('org.springframework.boot:spring-boot-starter-test')
 }
 
 task wrapper(type: Wrapper) {

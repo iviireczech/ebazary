@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="info">
+    <Appenders>
+        <Console name="console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d [%p] %c{1.} - %m%n"/>
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Root level="info">
+            <AppenderRef ref="console"/>
+        </Root>
+        <logger name="cz.ebazary" level="debug"/>
+        <logger name="log4jdbc.log4j2" level="info">
+            <MarkerFilter marker="LOG4JDBC_JDBC" onMatch="DENY" onMismatch="NEUTRAL"/>
+        </logger>
+        <!--see https://github.com/spring-projects/spring-boot/issues/2745-->
+        <logger name="org.springframework.boot.context.web.ErrorPageFilter" level="OFF"/>
+    </Loggers>
+</Configuration>
