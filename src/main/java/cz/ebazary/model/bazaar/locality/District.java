@@ -1,10 +1,5 @@
 package cz.ebazary.model.bazaar.locality;
 
-import org.springframework.util.StringUtils;
-
-import java.util.Arrays;
-import java.util.Optional;
-
 public enum District {
     AB("Praha"),
     BN("Benešov"),
@@ -92,52 +87,6 @@ public enum District {
 
     public String getName() {
         return name;
-    }
-
-    public static Optional<District> findByName(final String name) {
-
-        final String correctedName;
-        if ("Brno".equals(name)) {
-            correctedName = BM.getName();
-        } else if (name.matches("Brno [^0-9]+")) {
-            if (name.contains("-")) {
-                correctedName = StringUtils.trimAllWhitespace(name);
-            } else {
-                correctedName = name.replaceAll(" ", "-");
-            }
-        } else if ("Plzeň".equals(name)) {
-            correctedName = PM.getName();
-        } else if (name.matches("Plzeň [^0-9]+")) {
-            if (name.contains("-")) {
-                correctedName = StringUtils.trimAllWhitespace(name);
-            } else {
-                correctedName = name.replaceAll(" ", "-");
-            }
-        } else if (name.matches("Praha .*")) {
-            correctedName = AB.getName();
-        } else if (name.matches("Praha [^0-9]+")) {
-            if (name.contains("-")) {
-                correctedName = StringUtils.trimAllWhitespace(name);
-            } else {
-                correctedName = name.replaceAll(" ", "-");
-            }
-        } else if (name.matches("Frýdek.*Místek")) {
-            if (name.contains("-")) {
-                correctedName = StringUtils.trimAllWhitespace(name);
-            } else {
-                correctedName = name.replaceAll(" ", "-");
-            }
-        } else if (name.matches("Ostrava.*")){
-            correctedName = OV.getName();
-        } else {
-            correctedName = name;
-        }
-
-        return Arrays
-                .stream(District.values())
-                .filter(district -> district.getName().equals(correctedName))
-                .findAny();
-
     }
 
 }

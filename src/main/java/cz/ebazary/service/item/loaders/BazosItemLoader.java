@@ -2,11 +2,11 @@ package cz.ebazary.service.item.loaders;
 
 import cz.ebazary.model.bazaar.BazaarType;
 import cz.ebazary.model.bazaar.category.Category;
-import cz.ebazary.model.bazaar.locality.District;
 import cz.ebazary.model.bazaar.locality.ItemLocality;
 import cz.ebazary.model.item.Item;
 import cz.ebazary.model.item.ItemCurrency;
 import cz.ebazary.model.item.ItemPrice;
+import cz.ebazary.utils.ItemLocalityUtil;
 import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -15,6 +15,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
@@ -25,6 +26,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Service
 public class BazosItemLoader extends AbstractItemLoader {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BazosItemLoader.class);
@@ -293,21 +295,18 @@ public class BazosItemLoader extends AbstractItemLoader {
         final Element address = document.select("table").get(6).select("tbody > tr").get(1).select("td").get(2).select("a").get(0);
         final Matcher matcher = REGION_PATTERN.matcher(address.text());
 
-        final District district;
+        final String localityString;
         if (matcher.matches()) {
-            district =
-                    District
-                            .findByName(matcher.group(1))
-                            .orElseThrow(() -> new IllegalArgumentException("Disctrict " + matcher.group(1) + " not recognized"));
+            localityString = matcher.group(1);
         } else {
-            district =
-                    District
-                            .findByName(address.text())
-                            .orElseThrow(() -> new IllegalArgumentException("Disctrict " + address.text() + " not recognized"));
+            localityString = address.text();
         }
 
-        final ItemLocality itemLocality = new ItemLocality();
-        itemLocality.setDistrict(district);
+        final ItemLocality itemLocality =
+                ItemLocalityUtil
+                        .getItemLocality(localityString)
+                        .orElseThrow(() -> new IllegalStateException("Unsupported location"));
+
         item.setItemLocality(itemLocality);
 
 

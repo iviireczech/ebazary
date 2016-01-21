@@ -2,11 +2,11 @@ package cz.ebazary.service.item.loaders;
 
 import cz.ebazary.model.bazaar.BazaarType;
 import cz.ebazary.model.bazaar.category.Category;
-import cz.ebazary.model.bazaar.locality.District;
 import cz.ebazary.model.bazaar.locality.ItemLocality;
 import cz.ebazary.model.item.Item;
 import cz.ebazary.model.item.ItemCurrency;
 import cz.ebazary.model.item.ItemPrice;
+import cz.ebazary.utils.ItemLocalityUtil;
 import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -16,6 +16,7 @@ import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -27,6 +28,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Service
 public class BazarItemLoader extends AbstractItemLoader {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BazarItemLoader.class);
@@ -315,6 +317,7 @@ public class BazarItemLoader extends AbstractItemLoader {
     private void setLocality(final Document document, final Item item) {
 
         final Elements divKat = document.select("div.kat");
+        final String localityString;
         if (!divKat.isEmpty()) {
             final Pattern pattern = Pattern.compile(".* \\\\ (.*) \\\\ .*");
             final String address = divKat.select("span").attr("title");
@@ -322,59 +325,47 @@ public class BazarItemLoader extends AbstractItemLoader {
             if (m.matches()) {
                 final Matcher matcher = REGION_PATTERN.matcher(m.group(1));
 
-                final District district;
                 if (matcher.matches()) {
-                    district =
-                            District
-                                    .findByName(matcher.group(1))
-                                    .orElseThrow(() -> new IllegalArgumentException("Disctrict " + matcher.group(1) + " not recognized"));
+                    localityString = matcher.group(1);
                 } else {
-                    district =
-                            District
-                                    .findByName(m.group(1))
-                                    .orElseThrow(() -> new IllegalArgumentException("Disctrict " + m.group(1) + " not recognized"));
+                    localityString = m.group(1);
                 }
 
-                final ItemLocality itemLocality = new ItemLocality();
-                itemLocality.setDistrict(district);
-                item.setItemLocality(itemLocality);
+            } else {
+                throw new IllegalStateException("Unsupported location");
             }
         } else {
             final Elements tds = document.select("table#atributy > tbody > tr > td");
-            for (int i = 0; i < tds.size(); i++) {
-                final Element td = tds.get(i);
-                if ("Region:".equals(td.text())) {
-                    final Pattern pattern = Pattern.compile(".* \\\\ (.*) \\\\ .*");
-                    final String address = tds.get(i + 1).select("span").attr("title");
-                    final Matcher m = pattern.matcher(address);
-                    if (m.matches()) {
-                        final Matcher matcher = REGION_PATTERN.matcher(m.group(1));
+            localityString =
+                    tds
+                            .stream()
+                            .filter(td -> "Region:".equals(td.text()))
+                            .findAny()
+                            .map(td -> {
+                                final Pattern pattern = Pattern.compile(".* \\\\ (.*) \\\\ .*");
+                                final String address = td.nextElementSibling().select("span").attr("title");
+                                final Matcher m = pattern.matcher(address);
+                                if (m.matches()) {
+                                    final Matcher matcher = REGION_PATTERN.matcher(m.group(1));
 
-                        final District district;
-                        if (matcher.matches()) {
-                            district =
-                                    District
-                                            .findByName(matcher.group(1))
-                                            .orElseThrow(() -> new IllegalArgumentException("Disctrict " + matcher.group(1) + " not recognized"));
-                        } else {
-                            district =
-                                    District
-                                            .findByName(m.group(1))
-                                            .orElseThrow(() -> new IllegalArgumentException("Disctrict " + m.group(1) + " not recognized"));
-                        }
-
-                        final ItemLocality itemLocality = new ItemLocality();
-                        itemLocality.setDistrict(district);
-                        item.setItemLocality(itemLocality);
-                        break;
-                    }
-                }
-            }
+                                    if (matcher.matches()) {
+                                        return matcher.group(1);
+                                    } else {
+                                        return m.group(1);
+                                    }
+                                } else {
+                                    throw new IllegalStateException("Unsupported location");
+                                }
+                            })
+                            .orElseThrow(() -> new IllegalStateException("Unsupported location"));
         }
 
-        if (item.getItemLocality().getDistrict() == null && item.getItemLocality().getRegion() == null) {
-            throw new IllegalStateException("Empty location");
-        }
+        final ItemLocality itemLocality =
+                ItemLocalityUtil
+                        .getItemLocality(localityString)
+                        .orElseThrow(() -> new IllegalStateException("Unsupported location"));
+
+        item.setItemLocality(itemLocality);
 
 
     }
