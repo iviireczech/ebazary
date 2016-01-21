@@ -1,6 +1,7 @@
 package cz.ebazary.model.item;
 
 import cz.ebazary.model.bazaar.BazaarType;
+import cz.ebazary.model.bazaar.category.Category;
 import cz.ebazary.model.bazaar.locality.ItemLocality;
 import cz.ebazary.model.bazaar.locality.Locality;
 import lombok.Data;
@@ -16,6 +17,9 @@ public class Item {
 
     @NotNull
     private BazaarType bazaarType;
+
+    @NotNull
+    private Category category;
 
     @NotBlank
     private String url;
