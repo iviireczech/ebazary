@@ -5,7 +5,7 @@ public enum BazaarType {
     sbazar("sbazar.cz"),
     bazos("bazos.cz"),
     bazar("bazar.cz"),
-    hyperinzerce("http://hyperinzerce.cz/");
+    hyperinzerce("hyperinzerce.cz");
 
     private String name;
 
