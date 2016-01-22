@@ -192,7 +192,7 @@ public class BazosItemLoader extends AbstractItemLoader {
     @Override
     protected String getCategoryPageUrl(final String categoryUrl, final int page) {
 
-        return categoryUrl + "/" + (page * 15);
+        return page == 0 ? categoryUrl : categoryUrl + "/" + (page * 15) + "/";
 
     }
 
@@ -202,17 +202,19 @@ public class BazosItemLoader extends AbstractItemLoader {
         final List<String> itemUrls = new ArrayList<>();
 
         String categoryPageUrl = categoryPage.location();
+        if (categoryPageUrl.lastIndexOf('/') > 6) {
+            categoryPageUrl = categoryPageUrl.substring(0, categoryPageUrl.indexOf('/', 7));
+        }
 
         final Elements rows = categoryPage.select(DETAIL_SELECTOR);
-        for (Element row : rows) {
-            final Elements type = row.select("span.velikost10");
-            final String typeText =type.text();
-            if (OFFER_PATTERN.matcher(type.text()).matches()) {
-                if (categoryPageUrl.lastIndexOf('/') > 6) {
-                    categoryPageUrl = categoryPageUrl.substring(0, categoryPageUrl.lastIndexOf('/'));
+        for (final Element row : rows) {
+            final String location = row.select("div.popis").first().textNodes().get(1).text();
+            if (!location.contains("Slovensko") && !location.contains("Zahraničí")) {
+                final Elements type = row.select("span.velikost10");
+                if (OFFER_PATTERN.matcher(type.text()).matches()) {
+                    final String itemUrl = categoryPageUrl + row.select("td").get(0).select("a").attr("href");
+                    itemUrls.add(itemUrl);
                 }
-                final String itemUrl = categoryPageUrl + row.select("td").get(0).select("a").attr("href");
-                itemUrls.add(itemUrl);
             }
         }
 
@@ -243,7 +245,8 @@ public class BazosItemLoader extends AbstractItemLoader {
 
         final ItemPrice itemPrice = new ItemPrice();
 
-        final Element price = document.select("table").get(6).select("tbody > tr").get(2).select("td").get(1);
+        final Elements tables = document.select("table");
+        final Element price = tables.get(6).select("tbody > tr").get(2).select("td").get(1);
 
         if (NEGOTIATED_PRICE.equals(price.text()) || OFFER.equals(price.text())) {
             itemPrice.setNegotiatedPrice(true);
@@ -305,7 +308,7 @@ public class BazosItemLoader extends AbstractItemLoader {
         final ItemLocality itemLocality =
                 ItemLocalityUtil
                         .getItemLocality(localityString)
-                        .orElseThrow(() -> new IllegalStateException("Unsupported location"));
+                        .orElseThrow(() -> new IllegalStateException("Unsupported location " + localityString));
 
         item.setItemLocality(itemLocality);
 
