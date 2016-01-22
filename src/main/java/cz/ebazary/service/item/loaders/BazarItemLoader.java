@@ -405,11 +405,11 @@ public class BazarItemLoader extends AbstractItemLoader {
 
         final Elements divPrintOn = document.select("div.printon");
         if (!divPrintOn.isEmpty()) {
-            item.setMainImageUrl("www.bazar.cz/" + divPrintOn.select("img").attr("src"));
+            item.setMainImageUrl("http://www.bazar.cz/" + divPrintOn.select("img").attr("src"));
         } else {
             final Elements image = document.select("div#gallery > table");
             if(!image.isEmpty()) {
-                item.setMainImageUrl("www.bazar.cz/" + image.select("tbody > tr").get(0).select("td").get(0).select("a").attr("href"));
+                item.setMainImageUrl("http://www.bazar.cz/" + image.select("tbody > tr").get(0).select("td").get(0).select("a").attr("href"));
             }
         }
 
@@ -426,13 +426,13 @@ public class BazarItemLoader extends AbstractItemLoader {
             final Elements images = divPrintOff.select("img");
             if (images.size() > 1) {
                 for (int i = 1; i < images.size(); i++) {
-                    item.getOtherImagesUrl().add("www.bazar.cz/" + images.get(i).attr("src"));
+                    item.getOtherImagesUrl().add("http://www.bazar.cz/" + images.get(i).attr("src"));
                 }
             }
         } else {
             final Elements images = document.select("table.foto > tbody > tr > td > a");
             for (Element img : images) {
-                item.getOtherImagesUrl().add("www.bazar.cz/" + img.attr("href"));
+                item.getOtherImagesUrl().add("http://www.bazar.cz/" + img.attr("href"));
             }
         }
 
