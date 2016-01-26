@@ -1,6 +1,6 @@
 package cz.ebazary.controller;
 
-import cz.ebazary.model.item.Item;
+import cz.ebazary.dto.ItemDTO;
 import cz.ebazary.model.request.UserRequest;
 import cz.ebazary.service.item.loaders.Loadable;
 import org.joda.time.LocalDate;
@@ -34,15 +34,15 @@ public class HomeController {
     public String result(final @ModelAttribute("userRequest") UserRequest userRequest,
                          final Model model) {
 
-        final List<Item> items = new ArrayList<>();
+        final List<ItemDTO> itemDTOs = new ArrayList<>();
 
         loadables
                 .stream()
                 .forEach(
-                    loadable -> items.addAll(loadable.loadItems(LocalDate.now().minusDays(1)))
+                    loadable -> itemDTOs.addAll(loadable.loadItems(LocalDate.now().minusDays(1)))
                 );
 
-        model.addAttribute("items", items);
+        model.addAttribute("items", itemDTOs);
 
         return "result";
 

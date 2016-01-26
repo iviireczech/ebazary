@@ -1,6 +1,6 @@
 package cz.ebazary.service.item.loaders;
 
-import cz.ebazary.model.item.Item;
+import cz.ebazary.dto.ItemDTO;
 import org.joda.time.LocalDate;
 import org.springframework.validation.annotation.Validated;
 
@@ -10,6 +10,6 @@ import java.util.List;
 @Validated
 public interface Loadable {
 
-    List<Item> loadItems(@NotNull LocalDate from);
+    List<ItemDTO> loadItems(@NotNull LocalDate from);
 
 }

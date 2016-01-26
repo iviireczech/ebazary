@@ -16,44 +16,49 @@
     </head>
     <body>
         <div class="container">
-            <div th:each="item : ${items}" class="row">
+            <div th:each="item, iterator : ${items}" th:classappend="${iterator.odd} ? 'row-odd' : 'row-even' " class="row">
                 <div class="col-md-4">
-                    <img th:src="${item.mainImageUrl} != null ? ${item.mainImageUrl} : 'images/image_missing.jpg'" class="img-responsive img-thumbnail"/>
+                    <img th:src="${item.mainImageUrl}" class="img-responsive img-thumbnail"/>
                 </div>
-                <div class="col-md-8">
+                <div class="col-md-6">
                     <div class="row">
-                        <div class="col-md-8">
-                            <div th:text="${#strings.length(item.description) le 297 ? item.description : #strings.substring(item.description, 0, 297) + '...'}">1</div>
-                            <br/>
+                        <div class="col-md-12">
+                            <div th:text="${item.description}">1</div>
                         </div>
-                        <div class="col-md-2 col-md-offset-1">
-                            <div><b th:text="${item.itemPrice.price} != null ? ${item.itemPrice.price} + ' ' + ${item.itemPrice.currency.name} : (${item.itemPrice.negotiatedPrice} ? 'Dohodou' : 'V textu')"></b></div>
-                            <br/>
+                    </div>
+                    <br/>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <table class="table table-bordered table-condensed transparent">
+                                <tr>
+                                    <td>Datum:</td>
+                                    <td><span th:text="${item.insertionDate}" class="nowrap"/></td>
+                                </tr>
+                                <tr>
+                                    <td>Místo:</td>
+                                    <td><span th:text="${item.itemLocality}"  class="nowrap"/></td>
+                                </tr>
+                                <tr th:if="${item.phoneNumber != null}">
+                                    <td>Telefon:</td>
+                                    <td th:text="${item.phoneNumber}"></td>
+                                </tr>
+                                <tr th:if="${item.email != null}">
+                                    <td>Email:</td>
+                                    <td th:text="${item.email}"></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2 text-right">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h3 th:text="${item.itemPrice}"></h3>
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-8">
-                           <table class="table table-bordered table-condensed transparent">
-                               <tr>
-                                   <td>Datum:</td>
-                                   <td><span th:text="${#joda.format(item.insertionDate.toDateTimeAtStartOfDay(), 'dd.MM.yyyy')}" class="nowrap"/></td>
-                               </tr>
-                               <tr>
-                                   <td>Místo:</td>
-                                   <td><span th:text="${item.itemLocality.district} != null ? ${item.itemLocality.district.name} : ${item.itemLocality.region.name}"  class="nowrap"/></td>
-                               </tr>
-                               <tr th:if="${item.phoneNumber != null}">
-                                   <td>Telefon:</td>
-                                   <td th:text="${item.phoneNumber}"></td>
-                               </tr>
-                               <tr th:if="${item.email != null}">
-                                   <td>Email:</td>
-                                   <td th:text="${item.email}"></td>
-                               </tr>
-                           </table>
-                        </div>
-                        <div class="col-md-4">
-                            <a th:href="${item.url}" th:text="${'Kup na ' + item.bazaarType.name}" class="btn btn-info" role="button">Link Button</a>
+                        <div class="col-md-12">
+                            <a th:href="${item.url}" th:text="${'Kup na ' + item.bazaarName}" class="btn btn-info" role="button">Link Button</a>
                         </div>
                     </div>
                 </div>

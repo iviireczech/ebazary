@@ -1,5 +1,7 @@
 package cz.ebazary.service.item.loaders;
 
+import cz.ebazary.converters.ItemToItemDTOConverter;
+import cz.ebazary.dto.ItemDTO;
 import cz.ebazary.model.bazaar.category.Category;
 import cz.ebazary.model.item.Item;
 import org.joda.time.LocalDate;
@@ -25,7 +27,7 @@ public abstract class AbstractItemLoader implements Loadable {
     private Validator validator;
 
     @Override
-    public final List<Item> loadItems(final LocalDate from) {
+    public final List<ItemDTO> loadItems(final LocalDate from) {
         final List<Item> items = new ArrayList<>();
         try {
 
@@ -65,7 +67,7 @@ public abstract class AbstractItemLoader implements Loadable {
             LOGGER.error(e.getMessage());
         }
 
-        return items;
+        return ItemToItemDTOConverter.convert(items);
 
     }
 
