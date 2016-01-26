@@ -15,50 +15,58 @@
         <title>ebazary.cz</title>
     </head>
     <body>
+        <nav class="navbar navbar-default">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                </div>
+            </div>
+        </nav>
         <div class="container">
             <div th:each="item, iterator : ${items}" th:classappend="${iterator.odd} ? 'row-odd' : 'row-even' " class="row">
-                <div class="col-md-4">
-                    <img th:src="${item.mainImageUrl}" class="img-responsive img-thumbnail"/>
-                </div>
-                <div class="col-md-6">
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div th:text="${item.description}">1</div>
+                <div class="row-margin">
+                    <div class="col-md-4">
+                        <img th:src="${item.mainImageUrl}" class="img-responsive img-thumbnail"/>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div th:text="${item.description}">1</div>
+                            </div>
+                        </div>
+                        <br/>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <table class="table table-bordered table-condensed transparent">
+                                    <tr>
+                                        <td>Datum:</td>
+                                        <td><span th:text="${item.insertionDate}" class="nowrap"/></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Místo:</td>
+                                        <td><span th:text="${item.itemLocality}"  class="nowrap"/></td>
+                                    </tr>
+                                    <tr th:if="${item.phoneNumber != null}">
+                                        <td>Telefon:</td>
+                                        <td th:text="${item.phoneNumber}"></td>
+                                    </tr>
+                                    <tr th:if="${item.email != null}">
+                                        <td>Email:</td>
+                                        <td th:text="${item.email}"></td>
+                                    </tr>
+                                </table>
+                            </div>
                         </div>
                     </div>
-                    <br/>
-                    <div class="row">
-                        <div class="col-md-12">
-                            <table class="table table-bordered table-condensed transparent">
-                                <tr>
-                                    <td>Datum:</td>
-                                    <td><span th:text="${item.insertionDate}" class="nowrap"/></td>
-                                </tr>
-                                <tr>
-                                    <td>Místo:</td>
-                                    <td><span th:text="${item.itemLocality}"  class="nowrap"/></td>
-                                </tr>
-                                <tr th:if="${item.phoneNumber != null}">
-                                    <td>Telefon:</td>
-                                    <td th:text="${item.phoneNumber}"></td>
-                                </tr>
-                                <tr th:if="${item.email != null}">
-                                    <td>Email:</td>
-                                    <td th:text="${item.email}"></td>
-                                </tr>
-                            </table>
+                    <div class="col-md-2 text-right">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h3 th:text="${item.itemPrice}"></h3>
+                            </div>
                         </div>
-                    </div>
-                </div>
-                <div class="col-md-2 text-right">
-                    <div class="row">
-                        <div class="col-md-12">
-                            <h3 th:text="${item.itemPrice}"></h3>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-12">
-                            <a th:href="${item.url}" th:text="${'Kup na ' + item.bazaarName}" class="btn btn-info" role="button">Link Button</a>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <a th:href="${item.url}" th:text="${'Kup na ' + item.bazaarName}" class="btn btn-info" role="button">Link Button</a>
+                            </div>
                         </div>
                     </div>
                 </div>
