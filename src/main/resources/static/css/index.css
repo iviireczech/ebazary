@@ -6,11 +6,14 @@
     align-items: center;
 }
 
-.no-border-radius {
+.form-control, .btn {
     -webkit-border-radius: 0px !important;
     -moz-border-radius: 0px !important;
     border-radius: 0px !important;
-    border-left: 0px !important;
+}
+
+.no-right-border {
+    border-right: 0px !important;
 }
 
 .nowrap {
@@ -34,6 +37,13 @@
     margin-bottom:10px;
 }
 
-.dropdown-inline {
-    display: inline;
+.scrollable-menu {
+    height: auto;
+    max-height: 300px;
+    overflow-x: hidden;
 }
+/*
+.input-group .form-control{
+    width:auto !important;
+}
+*/

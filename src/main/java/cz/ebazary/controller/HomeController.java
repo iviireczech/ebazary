@@ -1,6 +1,8 @@
 package cz.ebazary.controller;
 
 import cz.ebazary.dto.ItemDTO;
+import cz.ebazary.model.bazaar.category.Category;
+import cz.ebazary.model.bazaar.locality.Region;
 import cz.ebazary.model.request.UserRequest;
 import cz.ebazary.service.item.loaders.Loadable;
 import org.joda.time.LocalDate;
@@ -25,6 +27,8 @@ public class HomeController {
 
         final UserRequest userRequest = new UserRequest();
         model.addAttribute("userRequest", userRequest);
+        model.addAttribute("categories", Category.values());
+        model.addAttribute("regions", Region.values());
 
         return "index";
 
