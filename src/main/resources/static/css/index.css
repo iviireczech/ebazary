@@ -1,5 +1,5 @@
 .vcenter {
-    min-height: 100%;  /* Fallback for browsers do NOT support vh unit */
+    min-height: 100%; /* Fallback for browsers do NOT support vh unit */
     min-height: 100vh; /* These two lines are counted as one :-)       */
 
     display: flex;
@@ -13,6 +13,10 @@
 }
 
 .no-right-border {
+    display: table-cell !important;
+}
+
+.no-right-border > .btn {
     border-right: 0px !important;
 }
 
@@ -20,21 +24,21 @@
     white-space: nowrap;
 }
 
-.transparent  {
+.transparent {
     background-color: transparent !important;
 }
 
 .container > .row {
-    border:1px solid #ddd;
+    border: 1px solid #ddd;
 }
 
 .container > .row + .row {
-    border-top:0;
+    border-top: 0;
 }
 
 .row-margin {
-    margin-top:10px;
-    margin-bottom:10px;
+    margin-top: 10px;
+    margin-bottom: 10px;
 }
 
 .scrollable-menu {
@@ -42,8 +46,7 @@
     max-height: 300px;
     overflow-x: hidden;
 }
-/*
-.input-group .form-control{
-    width:auto !important;
+
+.m-b-40 {
+    margin-bottom: 40px;
 }
-*/
