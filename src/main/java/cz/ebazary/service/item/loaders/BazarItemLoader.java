@@ -332,7 +332,7 @@ public class BazarItemLoader extends AbstractItemLoader {
                 }
 
             } else {
-                throw new IllegalStateException("Unsupported location");
+                throw new IllegalStateException("Unsupported location " + address);
             }
         } else {
             final Elements tds = document.select("table#atributy > tbody > tr > td");
@@ -354,7 +354,7 @@ public class BazarItemLoader extends AbstractItemLoader {
                                         return m.group(1);
                                     }
                                 } else {
-                                    throw new IllegalStateException("Unsupported location");
+                                    throw new IllegalStateException("Unsupported location " + address);
                                 }
                             })
                             .orElseThrow(() -> new IllegalStateException("Unsupported location"));
@@ -363,7 +363,7 @@ public class BazarItemLoader extends AbstractItemLoader {
         final ItemLocality itemLocality =
                 ItemLocalityUtil
                         .getItemLocality(localityString)
-                        .orElseThrow(() -> new IllegalStateException("Unsupported location"));
+                        .orElseThrow(() -> new IllegalStateException("Unsupported location " + localityString));
 
         item.setItemLocality(itemLocality);
 

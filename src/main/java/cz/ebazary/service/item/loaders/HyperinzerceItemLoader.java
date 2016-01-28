@@ -251,7 +251,7 @@ public class HyperinzerceItemLoader extends AbstractItemLoader {
         final ItemLocality itemLocality =
                 ItemLocalityUtil
                         .getItemLocality(localityString)
-                        .orElseThrow(() -> new IllegalStateException("Unsupported location"));
+                        .orElseThrow(() -> new IllegalStateException("Unsupported location " + localityString));
 
         item.setItemLocality(itemLocality);
 
