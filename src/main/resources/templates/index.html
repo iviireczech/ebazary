@@ -3,13 +3,18 @@
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 
-        <link type="text/css" href="css/index.css" rel="stylesheet" media="screen" />
-        <link href="http://cdn.jsdelivr.net/webjars/bootstrap/3.3.4/css/bootstrap.min.css"
+        <link type="text/css" href="../static/css/index.css" rel="stylesheet" media="screen" />
+        <link href="../static/css/bootstrap.min.css"
               th:href="@{/webjars/bootstrap/3.3.6/css/bootstrap.min.css}"
               rel="stylesheet" media="screen" />
 
-        <script src="http://cdn.jsdelivr.net/webjars/jquery/2.1.4/jquery.min.js"
-                th:src="@{/webjars/jquery/2.1.4/jquery.min.js}"></script>
+        <script src="../static/js/jquery-2.2.0.min.js"
+                th:src="@{/webjars/jquery/2.2.0/jquery.min.js}"></script>
+
+        <script src="../static/js/bootstrap.min.js"
+                th:src="@{/webjars/bootstrap/3.3.6/js/bootstrap.min.js}"></script>
+
+        <script src="../static/js/script.js"></script>
 
         <title>ebazary.cz</title>
     </head>
@@ -17,11 +22,39 @@
         <div class="container">
             <div class="vcenter">
                 <div class="col-md-8 col-md-offset-2">
-                    <form class="input-group" action="#" th:action="@{/result}" th:object="${userRequest}" method="post">
+                    <form class="input-group" action="#" th:action="@{/result}" th:object="${userRequest}" method="get">
                         <input type="text" class="form-control" th:field="*{query}" placeholder="Search for..." />
-                        <span class="input-group-btn">
-                            <input type="submit" class="btn btn-default" value="Go!" />
-                        </span>
+                        <div class="input-group-btn">
+                            <div class="dropdown-inline">
+                                <button type="button" class="btn btn-default dropdown-toggle no-border-radius" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    Všechny kategorie
+                                    <span class="caret"></span>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a href="#">Všechny kategorie</a></li>
+                                    <li><a href="#">Another action</a></li>
+                                    <li><a href="#">Something else here</a></li>
+                                    <li role="separator" class="divider"></li>
+                                    <li><a href="#">Separated link</a></li>
+                                </ul>
+                            </div>
+                            <div class="dropdown-inline">
+                                <button type="button" class="btn btn-default dropdown-toggle no-border-radius" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    Celá ČR
+                                    <span class="caret"></span>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a href="#">Action</a></li>
+                                    <li><a href="#">Another action</a></li>
+                                    <li><a href="#">Something else here</a></li>
+                                    <li role="separator" class="divider"></li>
+                                    <li><a href="#">Separated link</a></li>
+                                </ul>
+                            </div>
+                            <button type="submit" class="btn btn-default" value="Hledat">
+                                <i class="glyphicon glyphicon-search"></i>
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>

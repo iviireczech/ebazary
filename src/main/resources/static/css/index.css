@@ -6,6 +6,13 @@
     align-items: center;
 }
 
+.no-border-radius {
+    -webkit-border-radius: 0px !important;
+    -moz-border-radius: 0px !important;
+    border-radius: 0px !important;
+    border-left: 0px !important;
+}
+
 .nowrap {
     white-space: nowrap;
 }
@@ -25,4 +32,8 @@
 .row-margin {
     margin-top:10px;
     margin-bottom:10px;
+}
+
+.dropdown-inline {
+    display: inline;
 }
