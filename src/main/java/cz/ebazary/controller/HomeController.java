@@ -30,7 +30,7 @@ public class HomeController {
 
     }
 
-    @RequestMapping(value = "/result", method = RequestMethod.POST)
+    @RequestMapping(value = "/result", method = RequestMethod.GET)
     public String result(final @ModelAttribute("userRequest") UserRequest userRequest,
                          final Model model) {
 
