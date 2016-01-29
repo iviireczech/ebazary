@@ -2,6 +2,7 @@ package cz.ebazary.model.bazaar.locality;
 
 public enum Region {
 
+    CZ("Celá ČR", District.values()),
     JC("Jihočeský kraj", District.CB, District.CK, District.JH, District.PI, District.PT, District.ST, District.TA),
     JM("Jihomoravský kraj", District.BK, District.BM, District.BI, District.BV, District.HO, District.VY, District.ZN),
     KA("Karlovarský kraj", District.CH, District.KV, District.SO),
@@ -15,8 +16,7 @@ public enum Region {
     ST("Středočeský kraj", District.BN, District.BE, District.KD, District.KO, District.KH, District.ME, District.MB, District.NB, District.PY, District.PZ, District.PB, District.RA),
     US("Ústecký kraj", District.DC, District.CV, District.LT, District.LN, District.MO, District.TP, District.UL),
     VY("Kraj Vysočina", District.HB, District.JI, District.PE, District.TR, District.ZR),
-    ZL("Zlínský kraj", District.KM, District.UH, District.VS, District.ZL),
-    CZ("Celá ČR", District.values());
+    ZL("Zlínský kraj", District.KM, District.UH, District.VS, District.ZL);
 
     private String name;
     private District[] districts;
