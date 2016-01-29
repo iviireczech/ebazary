@@ -154,7 +154,8 @@ public class SBazarItemLoader extends AbstractItemLoader {
     @Override
     protected List<String> getCategoryUrls(final Category category) {
 
-        return CATEGORY_URLS.get(category);
+        final List<String> categoryUrls = CATEGORY_URLS.get(category);
+        return categoryUrls == null ? new ArrayList<>() : categoryUrls;
 
     }
 
