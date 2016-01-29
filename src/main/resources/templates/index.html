@@ -26,40 +26,47 @@
     <title>ebazary.cz</title>
 </head>
 <body>
-<div class="vcenter">
-    <div class="container">
-        <div>
-            <div class="text-center m-b-40">
-                <img src="../static/images/logo.png"/>
+    <div class="vcenter">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-10 col-xs-12 col-md-offset-1 m-b-40">
+                    <img id="logo" class="img-responsive" th:src="@{images/logo.png}" src="../static/images/logo.png"/>
+                </div>
             </div>
-            <div class="col-md-10 col-md-offset-1">
-                <form class="form-group" action="#" th:action="@{/result}" th:object="${userRequest}" method="get">
-                    <div class="input-group">
-                        <div class="input-group-btn">
-                            <select class="selectpicker form-control no-right-border btn-group-lg"
-                                    data-live-search="true" title="Celá ČR">
-                                <option th:each="region : ${regions}" th:text="${region.getName()}">
+            <div class="row">
+                <div class="col-md-10 col-xs-12 col-md-offset-1">
+                    <form class="form-group has-feedback" action="#" th:action="@{/result}" th:object="${userRequest}" method="get">
+                        <div class="row">
+                            <div class="input-group col-md-12 col-xs-12">
+                                <input id="search-input" type="text" class="form-control input-lg" th:field="*{query}" placeholder="Co hledáte?"/>
+                                <div class="input-group-btn btn-group-lg">
+                                    <button class="btn btn-default" type="button" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+                                        <span class="caret"></span>
+                                    </button>
+                                </div>
+                                <div class="input-group-btn btn-group-lg">
+                                    <button type="submit" class="btn btn-primary" value="Hledat">
+                                        <i class="glyphicon glyphicon-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="collapse" id="collapseExample">
+                            <select th:field="*{region}" class="selectpicker form-control no-right-border btn-group-lg"
+                                    data-live-search="true" data-size="8" data-dropup-auto="false" data-width="fit" title="Celá ČR">
+                                <option th:each="region : ${regions}" th:text="${region.getName()}" th:value="${region}">
+                                </option>
+                            </select>
+                            <select th:field="*{category}" class="selectpicker form-control no-right-border btn-group-lg"
+                                    data-live-search="true" data-size="8" data-dropup-auto="false" data-width="fit" title="Všechny kategorie">
+                                <option th:each="category : ${categories}" th:text="${category.getName()}" th:value="${category}">
                                 </option>
                             </select>
                         </div>
-                        <div class="input-group-btn">
-                            <select class="selectpicker form-control no-right-border btn-group-lg"
-                                    data-live-search="true" title="Všechny kategorie">
-                                <option th:each="category : ${categories}" th:text="${category.getName()}">
-                                </option>
-                            </select>
-                        </div>
-                        <input type="text" class="form-control input-lg" th:field="*{query}" placeholder="Hledám..."/>
-                        <div class="input-group-btn btn-group-lg">
-                            <button type="submit" class="btn btn-default" value="Hledat">
-                                <i class="glyphicon glyphicon-search"></i>
-                            </button>
-                        </div>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-</div>
 </body>
 </html>

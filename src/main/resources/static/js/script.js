@@ -4,4 +4,7 @@ $( document ).ready(function() {
         $(this).parents(".input-group-btn").find('.btn').html($(this).text() + ' <span class="caret"></span>');
         $(this).parents(".input-group-btn").find('.btn').val($(this).data('value'));
     });
+
+    $("#search-input").focus();
+
 });

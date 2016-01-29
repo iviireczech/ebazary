@@ -1,9 +1,11 @@
-.vcenter {
-    min-height: 100%; /* Fallback for browsers do NOT support vh unit */
-    min-height: 100vh; /* These two lines are counted as one :-)       */
+@media(min-width:992px) {
+    .vcenter {
+        min-height: 100%; /* Fallback for browsers do NOT support vh unit */
+        min-height: 100vh; /* These two lines are counted as one :-)       */
 
-    display: flex;
-    align-items: center;
+        display: flex;
+        align-items: center;
+    }
 }
 
 .form-control, .btn {
@@ -28,7 +30,7 @@
     background-color: transparent !important;
 }
 
-.container > .row {
+.container > .row-even, .row-odd {
     border: 1px solid #ddd;
 }
 
@@ -49,4 +51,12 @@
 
 .m-b-40 {
     margin-bottom: 40px;
+}
+
+#logo {
+    margin: 0 auto;
+}
+
+#search-input {
+    min-width: 180px;
 }
