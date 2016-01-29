@@ -2,6 +2,7 @@ package cz.ebazary.model.bazaar.category;
 
 public enum Category {
 
+    all_categories("Všechny kategorie"),
     cars("Automobily"),
     motorcycles("Motocykly"),
     machines("Stroje, nástroje"),
