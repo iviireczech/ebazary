@@ -2,11 +2,11 @@ package cz.ebazary.service.item.loaders;
 
 import cz.ebazary.model.bazaar.BazaarType;
 import cz.ebazary.model.bazaar.category.Category;
-import cz.ebazary.model.bazaar.locality.ItemLocality;
+import cz.ebazary.model.bazaar.locality.District;
 import cz.ebazary.model.item.Item;
 import cz.ebazary.model.item.ItemCurrency;
 import cz.ebazary.model.item.ItemPrice;
-import cz.ebazary.utils.ItemLocalityUtil;
+import cz.ebazary.utils.DisctrictUtil;
 import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -14,6 +14,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
@@ -246,12 +247,12 @@ public class SBazarItemLoader extends AbstractItemLoader {
             localityString = address.text();
         }
 
-        final ItemLocality itemLocality =
-                ItemLocalityUtil
-                        .getItemLocality(localityString)
-                        .orElseThrow(() -> new IllegalStateException("Unsupported location " + localityString));
+        final List<District> districts = DisctrictUtil.getDistricts(localityString);
+        if (CollectionUtils.isEmpty(districts)) {
+            throw new IllegalStateException("Unsupported location " + localityString);
+        }
 
-        item.setItemLocality(itemLocality);
+        item.getDistricts().addAll(districts);
 
     }
 

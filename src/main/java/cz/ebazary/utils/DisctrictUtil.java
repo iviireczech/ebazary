@@ -1,35 +1,34 @@
 package cz.ebazary.utils;
 
 import cz.ebazary.model.bazaar.locality.District;
-import cz.ebazary.model.bazaar.locality.ItemLocality;
 import cz.ebazary.model.bazaar.locality.Region;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
-public final class ItemLocalityUtil {
+public final class DisctrictUtil {
 
-    private ItemLocalityUtil() {
+    private DisctrictUtil() {
     }
 
-    public static Optional<ItemLocality> getItemLocality(final String localityString) {
+    public static List<District> getDistricts(final String localityString) {
+
+        final List<District> districts = new ArrayList<>();
 
         final Optional<Region> regionOptional = findRegionByName(localityString);
         if (regionOptional.isPresent()) {
-            final ItemLocality itemLocality = new ItemLocality();
-            itemLocality.setRegion(regionOptional.get());
-            return Optional.of(itemLocality);
+            districts.addAll(Arrays.asList(regionOptional.get().getDistricts()));
         } else {
             final Optional<District> districtOptional = findDistrictByName(localityString);
             if (districtOptional.isPresent()) {
-                final ItemLocality itemLocality = new ItemLocality();
-                itemLocality.setDistrict(districtOptional.get());
-                return Optional.of(itemLocality);
-            } else {
-                return Optional.empty();
+                districts.add(districtOptional.get());
             }
         }
+
+        return districts;
 
     }
 

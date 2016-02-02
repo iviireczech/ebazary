@@ -1,9 +1,8 @@
 package cz.ebazary.service.item.loaders;
 
-import cz.ebazary.converters.ItemToItemDTOConverter;
-import cz.ebazary.dto.ItemDTO;
 import cz.ebazary.model.bazaar.category.Category;
 import cz.ebazary.model.item.Item;
+import cz.ebazary.repository.ItemRepository;
 import org.joda.time.LocalDate;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -15,7 +14,6 @@ import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
 import javax.validation.Validator;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -26,9 +24,12 @@ public abstract class AbstractItemLoader implements Loadable {
     @Autowired
     private Validator validator;
 
+    @Autowired
+    private ItemRepository itemRepository;
+
     @Override
-    public final List<ItemDTO> loadItems(final LocalDate from) {
-        final List<Item> items = new ArrayList<>();
+    public void loadItems(final LocalDate from) {
+
         try {
 
             for (Category category : Category.values()) {
@@ -38,10 +39,10 @@ public abstract class AbstractItemLoader implements Loadable {
                     int page = 0;
                     while (!insertionDate.isBefore(from)) {
                         final String categoryPageUrl = getCategoryPageUrl(categoryUrl, page++);
-                        final Document categoryPage = Jsoup.connect(categoryPageUrl).get();
+                        final Document categoryPage = Jsoup.connect(categoryPageUrl).timeout(5000).get();
                         final List<String> itemUrls = getItemUrls(categoryPage);
                         for (String itemUrl : itemUrls) {
-                            final Document itemPage = Jsoup.connect(itemUrl).get();
+                            final Document itemPage = Jsoup.connect(itemUrl).timeout(5000).get();
 
                             final Item item = getItem(itemPage);
                             item.setCategory(category);
@@ -54,9 +55,9 @@ public abstract class AbstractItemLoader implements Loadable {
 
                             if (insertionDate.isBefore(from)) break;
 
-                            LOGGER.debug(item.toString());
+                            itemRepository.index(item);
 
-                            items.add(item);
+                            return;
                         }
                     }
                 }
@@ -66,8 +67,6 @@ public abstract class AbstractItemLoader implements Loadable {
         } catch (IOException e) {
             LOGGER.error(e.getMessage());
         }
-
-        return ItemToItemDTOConverter.convert(items);
 
     }
 

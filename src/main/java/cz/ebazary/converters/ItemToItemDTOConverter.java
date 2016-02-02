@@ -1,7 +1,8 @@
 package cz.ebazary.converters;
 
 import cz.ebazary.dto.ItemDTO;
-import cz.ebazary.model.bazaar.locality.ItemLocality;
+import cz.ebazary.model.bazaar.locality.District;
+import cz.ebazary.model.bazaar.locality.Region;
 import cz.ebazary.model.item.Item;
 import cz.ebazary.model.item.ItemPrice;
 import org.joda.time.format.DateTimeFormat;
@@ -9,9 +10,10 @@ import org.joda.time.format.DateTimeFormatter;
 import org.springframework.util.StringUtils;
 
 import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.stream.Collectors;
 
 public final class ItemToItemDTOConverter {
 
@@ -27,29 +29,27 @@ public final class ItemToItemDTOConverter {
     private ItemToItemDTOConverter() {
     }
 
-    public static List<ItemDTO> convert(final List<Item> items) {
+    public static List<ItemDTO> convert(final Iterable<Item> items) {
 
-        return items
-                .stream()
-                .map(item -> {
+        final List<ItemDTO> itemDTOs = new ArrayList<>();
+        for (final Item item : items) {
+            final ItemDTO itemDTO = new ItemDTO();
+            itemDTO.setBazaarName(item.getBazaarType().getName());
+            itemDTO.setCategory(item.getCategory().name());
+            itemDTO.setUrl(item.getUrl());
+            itemDTO.setInsertionDate(DATE_TIME_FORMATTER.print(item.getInsertionDate()));
+            itemDTO.setDescription(shrinkItemDescription(item.getDescription()));
+            itemDTO.setItemPrice(getItemPriceAsString(item.getItemPrice()));
+            itemDTO.setMainImageUrl(fixMissingMainImageUrl(item.getMainImageUrl()));
+            itemDTO.getOtherImagesUrl().addAll(item.getOtherImagesUrl());
+            itemDTO.setItemLocality(getDistrictsAsString(item.getDistricts()));
+            itemDTO.setPhoneNumber(item.getPhoneNumber());
+            itemDTO.setEmail(item.getEmail());
 
-                    final ItemDTO itemDTO = new ItemDTO();
-                    itemDTO.setBazaarName(item.getBazaarType().getName());
-                    itemDTO.setCategory(item.getCategory().name());
-                    itemDTO.setUrl(item.getUrl());
-                    itemDTO.setInsertionDate(DATE_TIME_FORMATTER.print(item.getInsertionDate()));
-                    itemDTO.setDescription(shrinkItemDescription(item.getDescription()));
-                    itemDTO.setItemPrice(getItemPriceAsString(item.getItemPrice()));
-                    itemDTO.setMainImageUrl(fixMissingMainImageUrl(item.getMainImageUrl()));
-                    itemDTO.getOtherImagesUrl().addAll(item.getOtherImagesUrl());
-                    itemDTO.setItemLocality(getItemLocalityAsString(item.getItemLocality()));
-                    itemDTO.setPhoneNumber(item.getPhoneNumber());
-                    itemDTO.setEmail(item.getEmail());
+            itemDTOs.add(itemDTO);
+        }
 
-                    return itemDTO;
-
-                })
-                .collect(Collectors.toList());
+        return itemDTOs;
 
     }
 
@@ -80,9 +80,24 @@ public final class ItemToItemDTOConverter {
 
     }
 
-    private static String getItemLocalityAsString(final ItemLocality itemLocality) {
+    private static String getDistrictsAsString(final List<District> districts) {
 
-        return itemLocality.getDistrict() != null ? itemLocality.getDistrict().getName() : itemLocality.getRegion().getName();
+        if (districts.size() == 1) {
+            return districts.get(0).getName();
+        } else {
+            for (final Region region : Region.values()) {
+                if (Arrays.equals(districts.toArray(), region.getDistricts())) {
+                    return region.getName();
+                }
+            }
+        }
+
+        throw new IllegalStateException(
+                String.format(
+                        "Given districts (%s) cannot be converted to String",
+                        districts
+                )
+        );
 
     }
 
