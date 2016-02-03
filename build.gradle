@@ -48,8 +48,6 @@ dependencies {
     compile('org.webjars:jquery:2.2.0')
     compile('org.jsoup:jsoup:1.8.3')
     compile('joda-time:joda-time')
-    compile('com.fasterxml.jackson.core:jackson-databind')
-    compile('com.fasterxml.jackson.datatype:jackson-datatype-joda')
 
     compile ('org.springframework.boot:spring-boot-starter-log4j2')
     compile ('org.jboss.logging:jboss-logging')
