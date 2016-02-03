@@ -1,8 +1,7 @@
 package cz.ebazary.converters;
 
 import cz.ebazary.dto.ItemDTO;
-import cz.ebazary.model.bazaar.locality.District;
-import cz.ebazary.model.bazaar.locality.Region;
+import cz.ebazary.model.bazaar.locality.ItemLocality;
 import cz.ebazary.model.item.Item;
 import cz.ebazary.model.item.ItemPrice;
 import org.joda.time.format.DateTimeFormat;
@@ -11,7 +10,6 @@ import org.springframework.util.StringUtils;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
@@ -42,7 +40,7 @@ public final class ItemToItemDTOConverter {
             itemDTO.setItemPrice(getItemPriceAsString(item.getItemPrice()));
             itemDTO.setMainImageUrl(fixMissingMainImageUrl(item.getMainImageUrl()));
             itemDTO.getOtherImagesUrl().addAll(item.getOtherImagesUrl());
-            itemDTO.setItemLocality(getDistrictsAsString(item.getDistricts()));
+            itemDTO.setItemLocality(getItemLocalityAsString(item.getItemLocality()));
             itemDTO.setPhoneNumber(item.getPhoneNumber());
             itemDTO.setEmail(item.getEmail());
 
@@ -80,24 +78,9 @@ public final class ItemToItemDTOConverter {
 
     }
 
-    private static String getDistrictsAsString(final List<District> districts) {
+    private static String getItemLocalityAsString(final ItemLocality itemLocality) {
 
-        if (districts.size() == 1) {
-            return districts.get(0).getName();
-        } else {
-            for (final Region region : Region.values()) {
-                if (Arrays.equals(districts.toArray(), region.getDistricts())) {
-                    return region.getName();
-                }
-            }
-        }
-
-        throw new IllegalStateException(
-                String.format(
-                        "Given districts (%s) cannot be converted to String",
-                        districts
-                )
-        );
+        return itemLocality.getDistrict() != null ? itemLocality.getDistrict().getName() : itemLocality.getRegion().getName();
 
     }
 

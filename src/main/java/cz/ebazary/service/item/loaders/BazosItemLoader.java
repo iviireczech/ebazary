@@ -2,11 +2,11 @@ package cz.ebazary.service.item.loaders;
 
 import cz.ebazary.model.bazaar.BazaarType;
 import cz.ebazary.model.bazaar.category.Category;
-import cz.ebazary.model.bazaar.locality.District;
+import cz.ebazary.model.bazaar.locality.ItemLocality;
 import cz.ebazary.model.item.Item;
 import cz.ebazary.model.item.ItemCurrency;
 import cz.ebazary.model.item.ItemPrice;
-import cz.ebazary.utils.DisctrictUtil;
+import cz.ebazary.utils.ItemLocalityUtil;
 import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -16,7 +16,6 @@ import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
@@ -307,12 +306,12 @@ public class BazosItemLoader extends AbstractItemLoader {
             localityString = address.text();
         }
 
-        final List<District> districts = DisctrictUtil.getDistricts(localityString);
-        if (CollectionUtils.isEmpty(districts)) {
-            throw new IllegalStateException("Unsupported location " + localityString);
-        }
+        final ItemLocality itemLocality =
+                ItemLocalityUtil
+                        .getItemLocality(localityString)
+                        .orElseThrow(() -> new IllegalStateException("Unsupported location " + localityString));
 
-        item.getDistricts().addAll(districts);
+        item.setItemLocality(itemLocality);
 
 
     }
@@ -346,10 +345,6 @@ public class BazosItemLoader extends AbstractItemLoader {
         }
 
 
-    }
-
-    private boolean isNumeric(String str) {
-        return str.matches("\\d+((\\.|,)\\d+)?");
     }
 
 }

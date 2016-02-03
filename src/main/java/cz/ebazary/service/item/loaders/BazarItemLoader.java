@@ -2,11 +2,11 @@ package cz.ebazary.service.item.loaders;
 
 import cz.ebazary.model.bazaar.BazaarType;
 import cz.ebazary.model.bazaar.category.Category;
-import cz.ebazary.model.bazaar.locality.District;
+import cz.ebazary.model.bazaar.locality.ItemLocality;
 import cz.ebazary.model.item.Item;
 import cz.ebazary.model.item.ItemCurrency;
 import cz.ebazary.model.item.ItemPrice;
-import cz.ebazary.utils.DisctrictUtil;
+import cz.ebazary.utils.ItemLocalityUtil;
 import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -34,20 +34,36 @@ public class BazarItemLoader extends AbstractItemLoader {
     private static final Logger LOGGER = LoggerFactory.getLogger(BazarItemLoader.class);
 
     private static final String DETAIL_SELECTOR = "div.text, div.inz";
-    private static final String DATE_SELECTOR = "span.velikost10";
-    private static final String MAIN_IMAGE_SELECTOR = "img#imgPrim";
-    private static final String OTHER_IMAGES_SELECTOR = "input[id~=^hImg[2-9]\\d*";
+    private static final String DATE_SELECTOR = "div.kat";
+    private static final String DATE_SPECIALIZED_SELECTOR = "table#atributy > tbody > tr > td";
+    private static final String MAIN_IMAGE_SELECTOR = "div.printon";
+    private static final String MAIN_IMAGE_SPECIALIZED_SELECTOR = "div#gallery > table";
+    private static final String OTHER_IMAGES_SELECTOR = "div.printoff";
+    private static final String OTHER_IMAGES_SPECIALIZED_SELECTOR = "table.foto > tbody > tr > td > a";
+    private static final String PRICE_SELECTOR = "span.cena";
+    private static final String CURRENCY_SELECTOR = "span.kc";
+    private static final String DESCRIPTION_SELECTOR = "div.text, p.text-justify";
+    private static final String PHONE_SELECTOR = "table#atributy > tbody > tr > td";
+    private static final String PHONE_SPECIALIZED_SELECTOR = "span.telefon";
+    private static final String EMAIL_SELECTOR = "span.parseMail";
+    private static final String LOCALITY_SELECTOR = "div.kat";
+    private static final String LOCALITY_SPECIALIZED_SELECTOR = "table#atributy > tbody > tr > td";
 
-    private static final String NEGOTIATED_PRICE = "Dohodou";
-    private static final String IN_TEXT_PRICE = "V textu";
-    private static final String OFFER = "Nabídněte";
-    private static final String FREE_PRICE = "Zdarma";
+    private static final String UPDATED = "Aktualizováno:";
+    private static final String SLOVAKIA = "Slovensko";
+    private static final String ABROAD = "Zahraničí";
+
+    private static final String PHONE = "Telefon:";
+    private static final String REGION = "Region:";
+
     private static final String NOT_LISTED = "neuvedena";
     private static final String PRICE_NOT_LISTED = "cena neuvedena";
 
     private static final String DATE_PATTERN = "dd.MM.yyyy";
     private static final Pattern REGION_PATTERN = Pattern.compile("\\d{3} \\d{2} (.*)");
-    private static final Pattern OFFER_PATTERN = Pattern.compile("-( TOP -)? Nabídka - \\[(\\d{1,2}.\\d{2}. \\d{4})\\]");
+    private static final Pattern ITEM_DETAIL_PATTERN = Pattern.compile(".* \\\\ (.*) \\\\ .*");
+    private static final Pattern COUNTRY_PATTERN = Pattern.compile("(.*) \\\\ .* \\\\ .*");
+    private static final Pattern INSERTION_DATE_PATTERN = Pattern.compile(" / (\\d{1,2}.\\d{1,2}.\\d{4}) / .*");
 
     private static final String NO_BREAK_SPACE = "\u00a0";
 
@@ -164,10 +180,9 @@ public class BazarItemLoader extends AbstractItemLoader {
             final Elements divs = row.select("div.kat, div.inztop");
             if (!divs.isEmpty()) {
                 final String address = divs.first().select("span[title]").attr("title");
-                final Pattern pattern = Pattern.compile("(.*) \\\\ .* \\\\ .*");
-                final Matcher m = pattern.matcher(address);
+                final Matcher m = COUNTRY_PATTERN.matcher(address);
                 if (m.matches()) {
-                    if (!"Slovensko".equals(m.group(1)) && !"Zahraničí".equals(m.group(1))) {
+                    if (!SLOVAKIA.equals(m.group(1)) && !ABROAD.equals(m.group(1))) {
                         final List<TextNode> textNodes = divs.first().textNodes();
                         for (final TextNode textNode : textNodes) {
                             if (textNode.text().matches(".*Nabídka.*")) {
@@ -210,12 +225,12 @@ public class BazarItemLoader extends AbstractItemLoader {
 
         final ItemPrice itemPrice = new ItemPrice();
 
-        final Elements currency = document.select("span.kc");
+        final Elements currency = document.select(CURRENCY_SELECTOR);
         if (!currency.isEmpty()) {
             if (NOT_LISTED.equals(currency.text())) {
                 itemPrice.setNegotiatedPrice(true);
             } else {
-                final String price = document.select("span.cena").get(0).textNodes().get(0).text();
+                final String price = document.select(PRICE_SELECTOR).get(0).textNodes().get(0).text();
 
                 final String priceValue = StringUtils.trimAllWhitespace(price.replace(NO_BREAK_SPACE, ""));
 
@@ -237,7 +252,7 @@ public class BazarItemLoader extends AbstractItemLoader {
             }
 
         } else {
-            final String price = document.select("span.cena").get(0).textNodes().get(0).text();
+            final String price = document.select(PRICE_SELECTOR).get(0).textNodes().get(0).text();
             if (PRICE_NOT_LISTED.equals(price)) {
                 itemPrice.setNegotiatedPrice(true);
             } else {
@@ -271,7 +286,7 @@ public class BazarItemLoader extends AbstractItemLoader {
 
     private void setDescription(final Document document, final Item item) {
 
-        final Elements description = document.select("div.text, p.text-justify");
+        final Elements description = document.select(DESCRIPTION_SELECTOR);
         item.setDescription(description.text());
 
         if (StringUtils.isEmpty(item.getDescription())) {
@@ -282,14 +297,14 @@ public class BazarItemLoader extends AbstractItemLoader {
 
     private void setPhone(final Document document, final Item item) {
 
-        final Elements phone = document.select("span.telefon");
+        final Elements phone = document.select(PHONE_SPECIALIZED_SELECTOR);
         if (!phone.isEmpty()) {
             item.setPhoneNumber(StringUtils.isEmpty(phone.text()) ? null : phone.text());
         } else {
-            final Elements tds = document.select("table#atributy > tbody > tr > td");
+            final Elements tds = document.select(PHONE_SELECTOR);
             for (int i = 0; i < tds.size(); i++) {
                 final Element td = tds.get(i);
-                if ("Telefon:".equals(td.text())) {
+                if (PHONE.equals(td.text())) {
                     item.setPhoneNumber(tds.get(i + 1).text());
                     break;
                 }
@@ -304,7 +319,7 @@ public class BazarItemLoader extends AbstractItemLoader {
 
     private void setEmail(final Document document, final Item item) {
 
-        final Elements email = document.select("span.parseMail");
+        final Elements email = document.select(EMAIL_SELECTOR);
         if (!email.isEmpty()) {
             item.setEmail(email.first().textNodes().get(0).text().replace("#", ".").replace("|", "@"));
         }
@@ -317,77 +332,51 @@ public class BazarItemLoader extends AbstractItemLoader {
 
     private void setLocality(final Document document, final Item item) {
 
-        final Elements divKat = document.select("div.kat");
+        final Elements divKat = document.select(LOCALITY_SELECTOR);
         final String localityString;
         if (!divKat.isEmpty()) {
-            final Pattern pattern = Pattern.compile(".* \\\\ (.*) \\\\ .*");
-            final String address = divKat.select("span").attr("title");
-            final Matcher m = pattern.matcher(address);
-            if (m.matches()) {
-                final Matcher matcher = REGION_PATTERN.matcher(m.group(1));
-
-                if (matcher.matches()) {
-                    localityString = matcher.group(1);
-                } else {
-                    localityString = m.group(1);
-                }
-
-            } else {
-                throw new IllegalStateException("Unsupported location " + address);
-            }
+            final String itemDetail = divKat.select("span").attr("title");
+            localityString = getLocalityString(itemDetail);
         } else {
-            final Elements tds = document.select("table#atributy > tbody > tr > td");
-            localityString =
+            final Elements tds = document.select(LOCALITY_SPECIALIZED_SELECTOR);
+            final Element td =
                     tds
                             .stream()
-                            .filter(td -> "Region:".equals(td.text()))
+                            .filter(tableData -> REGION.equals(tableData.text()))
                             .findAny()
-                            .map(td -> {
-                                final Pattern pattern = Pattern.compile(".* \\\\ (.*) \\\\ .*");
-                                final String address = td.nextElementSibling().select("span").attr("title");
-                                final Matcher m = pattern.matcher(address);
-                                if (m.matches()) {
-                                    final Matcher matcher = REGION_PATTERN.matcher(m.group(1));
+                            .orElseThrow(() -> new IllegalStateException("Region is missing"));
 
-                                    if (matcher.matches()) {
-                                        return matcher.group(1);
-                                    } else {
-                                        return m.group(1);
-                                    }
-                                } else {
-                                    throw new IllegalStateException("Unsupported location " + address);
-                                }
-                            })
-                            .orElseThrow(() -> new IllegalStateException("Unsupported location"));
+            final String itemDetail = td.nextElementSibling().select("span").attr("title");
+            localityString = getLocalityString(itemDetail);
+
         }
 
-        final List<District> districts = DisctrictUtil.getDistricts(localityString);
-        if (CollectionUtils.isEmpty(districts)) {
-            throw new IllegalStateException("Unsupported location " + localityString);
-        }
+        final ItemLocality itemLocality =
+                ItemLocalityUtil
+                        .getItemLocality(localityString)
+                        .orElseThrow(() -> new IllegalStateException("Unsupported location " + localityString));
 
-        item.getDistricts().addAll(districts);
+        item.setItemLocality(itemLocality);
 
 
     }
 
     private void setInsertionDate(final Document document, final Item item) {
 
-        final Elements divKat = document.select("div.kat");
+        final Elements divKat = document.select(DATE_SELECTOR);
         if (!divKat.isEmpty()) {
             final String date = divKat.get(0).textNodes().get(0).text();
-            final Pattern pattern = Pattern.compile(" / (\\d{1,2}.\\d{1,2}.\\d{4}) / .*");
-            final Matcher matcher = pattern.matcher(date);
+            final Matcher matcher = INSERTION_DATE_PATTERN.matcher(date);
             if (matcher.matches()) {
                 final DateTimeFormatter formatter = DateTimeFormat.forPattern(DATE_PATTERN);
                 final LocalDate localDate = formatter.parseLocalDate(matcher.group(1));
                 item.setInsertionDate(localDate);
             }
         } else {
-            final Elements tds = document.select("table#atributy > tbody > tr > td");
+            final Elements tds = document.select(DATE_SPECIALIZED_SELECTOR);
             for (int i = 0; i < tds.size(); i++) {
                 final Element td = tds.get(i);
-                if ("Aktualizováno:".equals(td.text())) {
+                if (UPDATED.equals(td.text())) {
                     final String date = tds.get(i + 1).text();
                     final DateTimeFormatter formatter = DateTimeFormat.forPattern(DATE_PATTERN);
                     final LocalDate localDate = formatter.parseLocalDate(StringUtils.trimAllWhitespace(date));
@@ -404,11 +393,11 @@ public class BazarItemLoader extends AbstractItemLoader {
 
     private void setMainImageUrl(final Document document, final Item item) {
 
-        final Elements divPrintOn = document.select("div.printon");
+        final Elements divPrintOn = document.select(MAIN_IMAGE_SELECTOR);
         if (!divPrintOn.isEmpty()) {
             item.setMainImageUrl("http://www.bazar.cz/" + divPrintOn.select("img").attr("src"));
         } else {
-            final Elements image = document.select("div#gallery > table");
+            final Elements image = document.select(MAIN_IMAGE_SPECIALIZED_SELECTOR);
             if(!image.isEmpty()) {
                 item.setMainImageUrl("http://www.bazar.cz/" + image.select("tbody > tr").get(0).select("td").get(0).select("a").attr("href"));
             }
@@ -422,7 +411,7 @@ public class BazarItemLoader extends AbstractItemLoader {
 
     private void setOtherImagesUrl(final Document document, final Item item) {
 
-        final Elements divPrintOff = document.select("div.printoff");
+        final Elements divPrintOff = document.select(OTHER_IMAGES_SELECTOR);
         if (!divPrintOff.isEmpty()) {
             final Elements images = divPrintOff.select("img");
             if (images.size() > 1) {
@@ -431,7 +420,7 @@ public class BazarItemLoader extends AbstractItemLoader {
                 }
             }
         } else {
-            final Elements images = document.select("table.foto > tbody > tr > td > a");
+            final Elements images = document.select(OTHER_IMAGES_SPECIALIZED_SELECTOR);
             for (Element img : images) {
                 item.getOtherImagesUrl().add("http://www.bazar.cz/" + img.attr("href"));
             }
@@ -443,8 +432,22 @@ public class BazarItemLoader extends AbstractItemLoader {
 
     }
 
-    private boolean isNumeric(String str) {
-        return str.matches("\\d+((\\.|,)\\d+)?");
+    private String getLocalityString(final String itemDetail) {
+
+        final Matcher m = ITEM_DETAIL_PATTERN.matcher(itemDetail);
+        if (m.matches()) {
+            final Matcher matcher = REGION_PATTERN.matcher(m.group(1));
+
+            if (matcher.matches()) {
+                return matcher.group(1);
+            } else {
+                return m.group(1);
+            }
+
+        } else {
+            throw new IllegalStateException("Unsupported location " + itemDetail);
+        }
+
     }
 
 }

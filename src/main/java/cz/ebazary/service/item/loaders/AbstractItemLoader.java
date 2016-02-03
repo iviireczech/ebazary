@@ -78,4 +78,8 @@ public abstract class AbstractItemLoader implements Loadable {
 
     protected abstract Item getItem(final Document itemPage);
 
+    protected boolean isNumeric(String str) {
+        return str.matches("\\d+((\\.|,)\\d+)?");
+    }
+
 }

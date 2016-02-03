@@ -2,11 +2,11 @@ package cz.ebazary.service.item.loaders;
 
 import cz.ebazary.model.bazaar.BazaarType;
 import cz.ebazary.model.bazaar.category.Category;
-import cz.ebazary.model.bazaar.locality.District;
+import cz.ebazary.model.bazaar.locality.ItemLocality;
 import cz.ebazary.model.item.Item;
 import cz.ebazary.model.item.ItemCurrency;
 import cz.ebazary.model.item.ItemPrice;
-import cz.ebazary.utils.DisctrictUtil;
+import cz.ebazary.utils.ItemLocalityUtil;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.joda.time.format.DateTimeFormat;
@@ -249,12 +249,12 @@ public class HyperinzerceItemLoader extends AbstractItemLoader {
         final Elements locationElement = document.select(LOCALITY_SELECTOR);
         final String localityString = locationElement.select("a").text();
 
-        final List<District> districts = DisctrictUtil.getDistricts(localityString);
-        if (CollectionUtils.isEmpty(districts)) {
-            throw new IllegalStateException("Unsupported location " + localityString);
-        }
+        final ItemLocality itemLocality =
+                ItemLocalityUtil
+                        .getItemLocality(localityString)
+                        .orElseThrow(() -> new IllegalStateException("Unsupported location " + localityString));
 
-        item.getDistricts().addAll(districts);
+        item.setItemLocality(itemLocality);
 
     }
 
@@ -310,10 +310,6 @@ public class HyperinzerceItemLoader extends AbstractItemLoader {
             LOGGER.warn("Empty other image urls");
         }
 
-    }
-
-    private boolean isNumeric(String str) {
-        return str.matches("\\d+((\\.|,)\\d+)?");
     }
 
 }
