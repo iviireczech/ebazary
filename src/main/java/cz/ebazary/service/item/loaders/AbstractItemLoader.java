@@ -47,7 +47,15 @@ public abstract class AbstractItemLoader implements Loadable {
                             final Item item = getItem(itemPage);
                             item.setCategory(category);
                             final Set<ConstraintViolation<Item>> constraintViolations = validator.validate(item);
+
                             if (!constraintViolations.isEmpty()) {
+                                for (ConstraintViolation<Item> constraints : constraintViolations) {
+                                    LOGGER.error(
+                                            constraints.getPropertyPath()
+                                                    + " " + constraints.getMessage()
+                                                    + "( " + item.getUrl() + " )"
+                                    );
+                                }
                                 throw new ConstraintViolationException(constraintViolations);
                             }
 
@@ -57,7 +65,6 @@ public abstract class AbstractItemLoader implements Loadable {
 
                             itemRepository.index(item);
 
-                            return;
                         }
                     }
                 }
