@@ -1,10 +1,30 @@
 package cz.ebazary.config;
 
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
+import org.springframework.data.cassandra.config.SchemaAction;
+import org.springframework.data.cassandra.config.java.AbstractCassandraConfiguration;
 
 @Configuration
-@EnableElasticsearchRepositories("cz.ebazary.model")
 public class RepositoryConfig {
+
+    @Configuration
+    public static class CassandraRepositoryConfig extends AbstractCassandraConfiguration {
+
+        @Override
+        protected String getKeyspaceName() {
+            return "items";
+        }
+
+        @Override
+        public SchemaAction getSchemaAction() {
+            return SchemaAction.RECREATE_DROP_UNUSED;
+        }
+
+        @Override
+        public String[] getEntityBasePackages() {
+            return new String[]{"cz.ebazary.model"};
+        }
+
+    }
 
 }
