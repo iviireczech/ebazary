@@ -7,9 +7,6 @@ import cz.ebazary.model.item.Item;
 import cz.ebazary.model.item.ItemCurrency;
 import cz.ebazary.model.item.ItemPrice;
 import cz.ebazary.utils.ItemLocalityUtil;
-import org.joda.time.LocalDate;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -17,7 +14,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -178,7 +178,7 @@ public class SBazarItemLoader extends AbstractItemLoader {
     protected Item getItem(final Document itemPage) {
 
         final Item item = new Item();
-        item.setBazaarType(BazaarType.sbazar);
+        item.setBazaarType(BazaarType.sbazar.name());
         item.setUrl(itemPage.location());
 
         setPrice(itemPage, item);
@@ -216,7 +216,10 @@ public class SBazarItemLoader extends AbstractItemLoader {
             itemPrice.setPrice(BigDecimal.ZERO);
         }
 
-        item.setItemPrice(itemPrice);
+        item.setPrice(itemPrice.getPrice());
+        item.setCurrency(itemPrice.getCurrency() == null ? null : itemPrice.getCurrency().name());
+        item.setNegotiatedPrice(itemPrice.isNegotiatedPrice());
+        item.setPriceInDescription(itemPrice.isPriceInDescription());
 
     }
 
@@ -251,15 +254,21 @@ public class SBazarItemLoader extends AbstractItemLoader {
                         .getItemLocality(localityString)
                         .orElseThrow(() -> new IllegalStateException("Unsupported location " + localityString));
 
-        item.setItemLocality(itemLocality);
+        item.setRegion(itemLocality.getRegion() == null ? null : itemLocality.getRegion().name());
+        item.setDistrict(itemLocality.getDistrict() == null ? null : itemLocality.getDistrict().name());
 
     }
 
     private void setInsertionDate(final Document document, final Item item) {
 
         final Elements date = document.select(DATE_SELECTOR);
-        final DateTimeFormatter formatter = DateTimeFormat.forPattern(DATE_PATTERN);
-        final LocalDate localDate = formatter.parseLocalDate(date.text());
+        final SimpleDateFormat simpleDateFormat = new SimpleDateFormat(DATE_PATTERN);
+        final Date localDate;
+        try {
+            localDate = simpleDateFormat.parse(date.text());
+        } catch (ParseException e) {
+            throw new IllegalArgumentException(e);
+        }
         item.setInsertionDate(localDate);
 
     }

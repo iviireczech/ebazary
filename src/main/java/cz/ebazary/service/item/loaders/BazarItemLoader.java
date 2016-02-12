@@ -7,9 +7,6 @@ import cz.ebazary.model.item.Item;
 import cz.ebazary.model.item.ItemCurrency;
 import cz.ebazary.model.item.ItemPrice;
 import cz.ebazary.utils.ItemLocalityUtil;
-import org.joda.time.LocalDate;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.TextNode;
@@ -21,7 +18,10 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -205,7 +205,7 @@ public class BazarItemLoader extends AbstractItemLoader {
     protected Item getItem(final Document itemPage) {
 
         final Item item = new Item();
-        item.setBazaarType(BazaarType.bazar);
+        item.setBazaarType(BazaarType.bazar.name());
         item.setUrl(itemPage.location());
 
         setPrice(itemPage, item);
@@ -280,7 +280,10 @@ public class BazarItemLoader extends AbstractItemLoader {
 
         }
 
-        item.setItemPrice(itemPrice);
+        item.setPrice(itemPrice.getPrice());
+        item.setCurrency(itemPrice.getCurrency() == null ? null : itemPrice.getCurrency().name());
+        item.setNegotiatedPrice(itemPrice.isNegotiatedPrice());
+        item.setPriceInDescription(itemPrice.isPriceInDescription());
 
     }
 
@@ -356,8 +359,8 @@ public class BazarItemLoader extends AbstractItemLoader {
                         .getItemLocality(localityString)
                         .orElseThrow(() -> new IllegalStateException("Unsupported location " + localityString));
 
-        item.setItemLocality(itemLocality);
-
+        item.setRegion(itemLocality.getRegion() == null ? null : itemLocality.getRegion().name());
+        item.setDistrict(itemLocality.getDistrict() == null ? null : itemLocality.getDistrict().name());
 
     }
 
@@ -368,8 +371,13 @@ public class BazarItemLoader extends AbstractItemLoader {
             final String date = divKat.get(0).textNodes().get(0).text();
             final Matcher matcher = INSERTION_DATE_PATTERN.matcher(date);
             if (matcher.matches()) {
-                final DateTimeFormatter formatter = DateTimeFormat.forPattern(DATE_PATTERN);
-                final LocalDate localDate = formatter.parseLocalDate(matcher.group(1));
+                final SimpleDateFormat simpleDateFormat = new SimpleDateFormat(DATE_PATTERN);
+                final Date localDate;
+                try {
+                    localDate = simpleDateFormat.parse(matcher.group(1));
+                } catch (ParseException e) {
+                    throw new IllegalArgumentException(e);
+                }
                 item.setInsertionDate(localDate);
             }
         } else {
@@ -378,8 +386,13 @@ public class BazarItemLoader extends AbstractItemLoader {
                 final Element td = tds.get(i);
                 if (UPDATED.equals(td.text())) {
                     final String date = tds.get(i + 1).text();
-                    final DateTimeFormatter formatter = DateTimeFormat.forPattern(DATE_PATTERN);
-                    final LocalDate localDate = formatter.parseLocalDate(StringUtils.trimAllWhitespace(date));
+                    final SimpleDateFormat simpleDateFormat = new SimpleDateFormat(DATE_PATTERN);
+                    final Date localDate;
+                    try {
+                        localDate = simpleDateFormat.parse(StringUtils.trimAllWhitespace(date));
+                    } catch (ParseException e) {
+                        throw new IllegalArgumentException(e);
+                    }
                     item.setInsertionDate(localDate);
                 }
             }

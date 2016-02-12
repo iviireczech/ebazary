@@ -7,9 +7,6 @@ import cz.ebazary.model.item.Item;
 import cz.ebazary.model.item.ItemCurrency;
 import cz.ebazary.model.item.ItemPrice;
 import cz.ebazary.utils.ItemLocalityUtil;
-import org.joda.time.LocalDate;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -19,7 +16,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -227,7 +227,7 @@ public class BazosItemLoader extends AbstractItemLoader {
     protected Item getItem(final Document itemPage) {
 
         final Item item = new Item();
-        item.setBazaarType(BazaarType.bazos);
+        item.setBazaarType(BazaarType.bazos.name());
         item.setUrl(itemPage.location());
 
         setPrice(itemPage, item);
@@ -276,13 +276,19 @@ public class BazosItemLoader extends AbstractItemLoader {
             throw new IllegalStateException(price.text());
         }
 
-        item.setItemPrice(itemPrice);
+        item.setPrice(itemPrice.getPrice());
+        item.setCurrency(itemPrice.getCurrency() == null ? null : itemPrice.getCurrency().name());
+        item.setNegotiatedPrice(itemPrice.isNegotiatedPrice());
+        item.setPriceInDescription(itemPrice.isPriceInDescription());
 
     }
 
     private void setDescription(final Document document, final Item item) {
 
-        final Element description = document.select("table").get(4).select("tbody > tr").get(1);
+        Element description = document.select("table").get(4).select("tbody > tr").get(1);
+        if (StringUtils.isEmpty(description)) {
+            description = document.select("h1.nadpis").first();
+        }
         item.setDescription(description.text());
 
     }
@@ -311,8 +317,8 @@ public class BazosItemLoader extends AbstractItemLoader {
                         .getItemLocality(localityString)
                         .orElseThrow(() -> new IllegalStateException("Unsupported location " + localityString));
 
-        item.setItemLocality(itemLocality);
-
+        item.setRegion(itemLocality.getRegion() == null ? null : itemLocality.getRegion().name());
+        item.setDistrict(itemLocality.getDistrict() == null ? null : itemLocality.getDistrict().name());
 
     }
 
@@ -321,8 +327,13 @@ public class BazosItemLoader extends AbstractItemLoader {
         final Elements date = document.select(DATE_SELECTOR);
         final Matcher matcher = OFFER_PATTERN.matcher(date.text());
         if (matcher.matches()) {
-            final DateTimeFormatter formatter = DateTimeFormat.forPattern(DATE_PATTERN);
-            final LocalDate localDate = formatter.parseLocalDate(StringUtils.trimAllWhitespace(matcher.group(2)));
+            final SimpleDateFormat simpleDateFormat = new SimpleDateFormat(DATE_PATTERN);
+            final Date localDate;
+            try {
+                localDate = simpleDateFormat.parse(StringUtils.trimAllWhitespace(matcher.group(2)));
+            } catch (ParseException e) {
+                throw new IllegalArgumentException(e);
+            }
             item.setInsertionDate(localDate);
         }
 

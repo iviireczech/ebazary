@@ -1,49 +1,58 @@
 package cz.ebazary.model.item;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import cz.ebazary.model.bazaar.BazaarType;
-import cz.ebazary.model.bazaar.category.Category;
-import cz.ebazary.model.bazaar.locality.ItemLocality;
-import cz.ebazary.model.bazaar.locality.Locality;
 import lombok.Data;
 import org.hibernate.validator.constraints.NotBlank;
-import org.joda.time.LocalDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.cassandra.mapping.PrimaryKey;
+import org.springframework.data.cassandra.mapping.Table;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
 import javax.validation.constraints.NotNull;
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @Data
 @Document(indexName = "item")
+@Table(value = "item")
 public class Item {
 
     @NotBlank
     @Id
+    @PrimaryKey
     private String url;
 
     @NotNull
     @JsonIgnore
-    private BazaarType bazaarType;
+    private String bazaarType;
 
     @NotNull
     @Field(type = FieldType.String, store = true)
-    private Category category;
+    private String category;
 
     @NotNull
     @JsonIgnore
-    private LocalDate insertionDate;
+    private Date insertionDate;
 
     @NotBlank
     @Field(type = FieldType.String, store = true)
     private String description;
 
-    @Price
     @JsonIgnore
-    private ItemPrice itemPrice;
+    private BigDecimal price;
+
+    @JsonIgnore
+    private String currency;
+
+    @JsonIgnore
+    private boolean negotiatedPrice;
+
+    @JsonIgnore
+    private boolean priceInDescription;
 
     @JsonIgnore
     private String mainImageUrl;
@@ -52,9 +61,11 @@ public class Item {
     @JsonIgnore
     private List<String> otherImagesUrl;
 
-    @Locality
-    @Field(type = FieldType.Object, store = true)
-    private ItemLocality itemLocality;
+    @Field(type = FieldType.String, store = true)
+    private String district;
+
+    @Field(type = FieldType.String, store = true)
+    private String region;
 
     @JsonIgnore
     private String phoneNumber;

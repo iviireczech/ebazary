@@ -2,8 +2,8 @@ package cz.ebazary.service.item.loaders;
 
 import cz.ebazary.model.bazaar.category.Category;
 import cz.ebazary.model.item.Item;
-import cz.ebazary.repository.ItemRepository;
-import org.joda.time.LocalDate;
+import cz.ebazary.repository.ItemCassandraRepository;
+import cz.ebazary.repository.ItemElasticsearchRepository;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
@@ -13,9 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
 import javax.validation.Validator;
-import java.io.IOException;
+import java.util.Date;
 import java.util.List;
-import java.util.Set;
 
 public abstract class AbstractItemLoader implements Loadable {
 
@@ -25,54 +24,77 @@ public abstract class AbstractItemLoader implements Loadable {
     private Validator validator;
 
     @Autowired
-    private ItemRepository itemRepository;
+    private ItemElasticsearchRepository itemElasticsearchRepository;
+
+    @Autowired
+    private ItemCassandraRepository itemCassandraRepository;
 
     @Override
-    public void loadItems(final LocalDate from) {
+    public void loadItems(final Date from) {
 
-        try {
+        int itemCounter = 0;
 
-            for (Category category : Category.values()) {
-                final List<String> categoryUrls = getCategoryUrls(category);
-                for (final String categoryUrl : categoryUrls) {
-                    LocalDate insertionDate = LocalDate.now();
-                    int page = 0;
-                    while (!insertionDate.isBefore(from)) {
+        for (Category category : Category.values()) {
+            final List<String> categoryUrls = getCategoryUrls(category);
+            for (final String categoryUrl : categoryUrls) {
+                Date insertionDate = new Date();
+                int page = 0;
+                while (!insertionDate.before(from)) {
+
+                    final List<String> itemUrls;
+                    try {
                         final String categoryPageUrl = getCategoryPageUrl(categoryUrl, page++);
                         final Document categoryPage = Jsoup.connect(categoryPageUrl).timeout(5000).get();
-                        final List<String> itemUrls = getItemUrls(categoryPage);
-                        for (String itemUrl : itemUrls) {
+                        itemUrls = getItemUrls(categoryPage);
+                    } catch (Exception e) {
+                        LOGGER.error(e.toString());
+                        break;
+                    }
+
+                    if (itemUrls.isEmpty()) {
+                        break;
+                    }
+
+                    for (String itemUrl : itemUrls) {
+                        try {
                             final Document itemPage = Jsoup.connect(itemUrl).timeout(5000).get();
 
                             final Item item = getItem(itemPage);
-                            item.setCategory(category);
-                            final Set<ConstraintViolation<Item>> constraintViolations = validator.validate(item);
+                            item.setCategory(category.name());
 
-                            if (!constraintViolations.isEmpty()) {
-                                for (ConstraintViolation<Item> constraints : constraintViolations) {
-                                    LOGGER.error(
-                                            constraints.getPropertyPath()
-                                                    + " " + constraints.getMessage()
-                                                    + "( " + item.getUrl() + " )"
-                                    );
-                                }
-                                throw new ConstraintViolationException(constraintViolations);
-                            }
+                            validator.validate(item);
 
                             insertionDate = item.getInsertionDate();
 
-                            if (insertionDate.isBefore(from)) break;
+                            if (insertionDate.before(from)) break;
 
-                            itemRepository.index(item);
+                            itemElasticsearchRepository.index(item);
+                            itemCassandraRepository.save(item);
 
+                            if (++itemCounter % 1000 == 0) {
+                                LOGGER.info("" + itemCounter);
+                                return;
+                            }
+
+                        } catch (Exception e) {
+                            if (e instanceof ConstraintViolationException) {
+                                final ConstraintViolationException cve = (ConstraintViolationException) e;
+                                for (ConstraintViolation<?> constraint : cve.getConstraintViolations()) {
+                                    LOGGER.error(
+                                            constraint.getPropertyPath()
+                                                    + " " + constraint.getMessage()
+                                                    + "( " + ((Item)constraint.getRootBean()).getUrl() + " )"
+                                    );
+                                }
+                            } else {
+                                LOGGER.error(e.getMessage());
+                            }
                         }
+
                     }
                 }
-
             }
 
-        } catch (IOException e) {
-            LOGGER.error(e.getMessage());
         }
 
     }

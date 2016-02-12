@@ -8,9 +8,6 @@ import cz.ebazary.model.item.ItemCurrency;
 import cz.ebazary.model.item.ItemPrice;
 import cz.ebazary.utils.ItemLocalityUtil;
 import org.joda.time.DateTime;
-import org.joda.time.LocalDate;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -21,7 +18,11 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -170,7 +171,7 @@ public class HyperinzerceItemLoader extends AbstractItemLoader {
     protected Item getItem(final Document itemPage) {
 
         final Item item = new Item();
-        item.setBazaarType(BazaarType.hyperinzerce);
+        item.setBazaarType(BazaarType.hyperinzerce.name());
         item.setUrl(itemPage.location());
 
         setPrice(itemPage, item);
@@ -214,7 +215,10 @@ public class HyperinzerceItemLoader extends AbstractItemLoader {
             throw new IllegalStateException(price);
         }
 
-        item.setItemPrice(itemPrice);
+        item.setPrice(itemPrice.getPrice());
+        item.setCurrency(itemPrice.getCurrency() == null ? null : itemPrice.getCurrency().name());
+        item.setNegotiatedPrice(itemPrice.isNegotiatedPrice());
+        item.setPriceInDescription(itemPrice.isPriceInDescription());
 
     }
 
@@ -254,7 +258,8 @@ public class HyperinzerceItemLoader extends AbstractItemLoader {
                         .getItemLocality(localityString)
                         .orElseThrow(() -> new IllegalStateException("Unsupported location " + localityString));
 
-        item.setItemLocality(itemLocality);
+        item.setRegion(itemLocality.getRegion() == null ? null : itemLocality.getRegion().name());
+        item.setDistrict(itemLocality.getDistrict() == null ? null : itemLocality.getDistrict().name());
 
     }
 
@@ -264,19 +269,30 @@ public class HyperinzerceItemLoader extends AbstractItemLoader {
         final Matcher dateTimeMatcher = DATE_TIME_PATTERN.matcher(date);
         final Matcher dateMatcher = ONLY_DATE_PATTERN.matcher(date);
 
-        final DateTimeFormatter formatter = DateTimeFormat.forPattern(DATE_PATTERN);
+        final SimpleDateFormat simpleDateFormat = new SimpleDateFormat(DATE_PATTERN);
         if (dateTimeMatcher.matches()) {
-            final LocalDate localDate;
+            final Date localDate;
             if (TODAY.equals(dateTimeMatcher.group(1))) {
-                localDate = LocalDate.now();
+                localDate = new Date();
             } else if (YESTERDAY.equals(dateTimeMatcher.group(1))) {
-                localDate = LocalDate.now().minusDays(1);
+                final Calendar calendar = Calendar.getInstance();
+                calendar.add(Calendar.DATE, -1);
+                localDate = calendar.getTime();
             } else {
-                localDate = formatter.parseLocalDate(dateTimeMatcher.group(1) + DateTime.now().getYear());
+                try {
+                    localDate = simpleDateFormat.parse(dateTimeMatcher.group(1) + DateTime.now().getYear());
+                } catch (ParseException e) {
+                    throw new IllegalArgumentException(e);
+                }
             }
             item.setInsertionDate(localDate);
         } else if (dateMatcher.matches()) {
-            final LocalDate localDate = formatter.parseLocalDate(date);
+            final Date localDate;
+            try {
+                localDate = simpleDateFormat.parse(date);
+            } catch (ParseException e) {
+                throw new IllegalArgumentException(e);
+            }
             item.setInsertionDate(localDate);
         }
 

@@ -1,14 +1,11 @@
 package cz.ebazary.converters;
 
 import cz.ebazary.dto.ItemDTO;
-import cz.ebazary.model.bazaar.locality.ItemLocality;
 import cz.ebazary.model.item.Item;
-import cz.ebazary.model.item.ItemPrice;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 import org.springframework.util.StringUtils;
 
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -22,7 +19,7 @@ public final class ItemToItemDTOConverter {
 
     private static final String MISSING_IMAGE_URL = "images/image_missing.jpg";
 
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormat.forPattern("dd.MM.yyyy");
+    private static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("dd.MM.yyyy");
 
     private ItemToItemDTOConverter() {
     }
@@ -32,15 +29,15 @@ public final class ItemToItemDTOConverter {
         final List<ItemDTO> itemDTOs = new ArrayList<>();
         for (final Item item : items) {
             final ItemDTO itemDTO = new ItemDTO();
-            itemDTO.setBazaarName(item.getBazaarType().getName());
-            itemDTO.setCategory(item.getCategory().name());
+            itemDTO.setBazaarName(item.getBazaarType());
+            itemDTO.setCategory(item.getCategory());
             itemDTO.setUrl(item.getUrl());
-            itemDTO.setInsertionDate(DATE_TIME_FORMATTER.print(item.getInsertionDate()));
+            itemDTO.setInsertionDate(SIMPLE_DATE_FORMAT.format(item.getInsertionDate()));
             itemDTO.setDescription(shrinkItemDescription(item.getDescription()));
-            itemDTO.setItemPrice(getItemPriceAsString(item.getItemPrice()));
+            itemDTO.setItemPrice(getItemPriceAsString(item));
             itemDTO.setMainImageUrl(fixMissingMainImageUrl(item.getMainImageUrl()));
             itemDTO.getOtherImagesUrl().addAll(item.getOtherImagesUrl());
-            itemDTO.setItemLocality(getItemLocalityAsString(item.getItemLocality()));
+            itemDTO.setItemLocality(getItemLocalityAsString(item));
             itemDTO.setPhoneNumber(item.getPhoneNumber());
             itemDTO.setEmail(item.getEmail());
 
@@ -61,14 +58,14 @@ public final class ItemToItemDTOConverter {
 
     }
 
-    private static String getItemPriceAsString(final ItemPrice itemPrice) {
+    private static String getItemPriceAsString(final Item item) {
 
-        if (itemPrice.isNegotiatedPrice()) return NEGOTIATED_PRICE;
-        if (itemPrice.isPriceInDescription()) return IN_DESCRIPTION_PRICE;
+        if (item.isNegotiatedPrice()) return NEGOTIATED_PRICE;
+        if (item.isPriceInDescription()) return IN_DESCRIPTION_PRICE;
 
         return NumberFormat
                 .getNumberInstance(Locale.forLanguageTag("cs-CZ"))
-                .format(itemPrice.getPrice()) + " " + itemPrice.getCurrency().getName();
+                .format(item.getPrice()) + " " + item.getCurrency();
 
     }
 
@@ -78,9 +75,9 @@ public final class ItemToItemDTOConverter {
 
     }
 
-    private static String getItemLocalityAsString(final ItemLocality itemLocality) {
+    private static String getItemLocalityAsString(final Item item) {
 
-        return itemLocality.getDistrict() != null ? itemLocality.getDistrict().getName() : itemLocality.getRegion().getName();
+        return item.getDistrict() != null ? item.getDistrict() : item.getRegion();
 
     }
 
