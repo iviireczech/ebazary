@@ -45,6 +45,8 @@ public class HomeController {
                         );
 
         model.addAttribute("items", itemDTOs);
+        model.addAttribute("categories", Category.values());
+        model.addAttribute("regions", Region.values());
 
         return "result";
 
