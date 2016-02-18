@@ -10,9 +10,9 @@
             <AppenderRef ref="console"/>
         </Root>
         <logger name="cz.ebazary" level="debug"/>
-        <logger name="log4jdbc.log4j2" level="info">
-            <MarkerFilter marker="LOG4JDBC_JDBC" onMatch="DENY" onMismatch="NEUTRAL"/>
-        </logger>
+        <logger name="org.springframework.data.elasticsearch.core.ElasticsearchTemplate" level="debug"/>
+        <logger name="com.datastax.driver.core.RequestHandler" level="trace"/>
+        <logger name="org.thymeleaf" level="warn"/>
         <!--see https://github.com/spring-projects/spring-boot/issues/2745-->
         <logger name="org.springframework.boot.context.web.ErrorPageFilter" level="OFF"/>
     </Loggers>
