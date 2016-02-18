@@ -139,6 +139,10 @@
     box-shadow: none !important;
 }
 
+.navbar-header > .row {
+    margin-top: 15px;
+}
+
 /*
 .has-error.input-group.input-group-focus,
 .has-error .input-group.input-group-focus {
