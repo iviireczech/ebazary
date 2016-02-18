@@ -17,7 +17,7 @@ public class RepositoryConfig {
 
         @Override
         public SchemaAction getSchemaAction() {
-            return SchemaAction.RECREATE_DROP_UNUSED;
+            return SchemaAction.NONE;
         }
 
         @Override
