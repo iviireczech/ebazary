@@ -1,7 +1,12 @@
 package cz.ebazary.converters;
 
 import cz.ebazary.dto.ItemDTO;
+import cz.ebazary.model.bazaar.BazaarType;
+import cz.ebazary.model.bazaar.category.Category;
+import cz.ebazary.model.bazaar.locality.District;
+import cz.ebazary.model.bazaar.locality.Region;
 import cz.ebazary.model.item.Item;
+import cz.ebazary.model.item.ItemCurrency;
 import org.springframework.util.StringUtils;
 
 import java.text.NumberFormat;
@@ -29,14 +34,16 @@ public final class ItemToItemDTOConverter {
         final List<ItemDTO> itemDTOs = new ArrayList<>();
         for (final Item item : items) {
             final ItemDTO itemDTO = new ItemDTO();
-            itemDTO.setBazaarName(item.getBazaarType());
-            itemDTO.setCategory(item.getCategory());
+            itemDTO.setBazaarName(BazaarType.valueOf(item.getBazaarType()).getName());
+            itemDTO.setCategory(Category.valueOf(item.getCategory()).getName());
             itemDTO.setUrl(item.getUrl());
             itemDTO.setInsertionDate(SIMPLE_DATE_FORMAT.format(item.getInsertionDate()));
             itemDTO.setDescription(shrinkItemDescription(item.getDescription()));
             itemDTO.setItemPrice(getItemPriceAsString(item));
             itemDTO.setMainImageUrl(fixMissingMainImageUrl(item.getMainImageUrl()));
-            itemDTO.getOtherImagesUrl().addAll(item.getOtherImagesUrl());
+            if (item.getOtherImagesUrl() != null) {
+                itemDTO.getOtherImagesUrl().addAll(item.getOtherImagesUrl());
+            }
             itemDTO.setItemLocality(getItemLocalityAsString(item));
             itemDTO.setPhoneNumber(item.getPhoneNumber());
             itemDTO.setEmail(item.getEmail());
@@ -65,7 +72,7 @@ public final class ItemToItemDTOConverter {
 
         return NumberFormat
                 .getNumberInstance(Locale.forLanguageTag("cs-CZ"))
-                .format(item.getPrice()) + " " + item.getCurrency();
+                .format(item.getPrice()) + " " + ItemCurrency.valueOf(item.getCurrency()).getName();
 
     }
 
@@ -77,7 +84,9 @@ public final class ItemToItemDTOConverter {
 
     private static String getItemLocalityAsString(final Item item) {
 
-        return item.getDistrict() != null ? item.getDistrict() : item.getRegion();
+        return item.getDistrict() != null
+                ? District.valueOf(item.getDistrict()).getName()
+                : Region.valueOf(item.getRegion()).getName();
 
     }
 
