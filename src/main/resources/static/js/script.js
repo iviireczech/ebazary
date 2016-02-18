@@ -5,6 +5,22 @@ $( document ).ready(function() {
         $(this).parents(".input-group-btn").find('.btn').val($(this).data('value'));
     });
 
+    $(".input-group > input").focus(function(e){
+        $(this).parent().addClass("input-group-focus");
+    }).blur(function(e){
+        $(this).parent().removeClass("input-group-focus");
+    });
+
     $("#search-input").focus();
+
+    /*
+    $("#filter-collapse-btn").parent().click(function(){
+        $(this).parent().toggleClass("filter-enabled");
+    });
+
+    $("#filter-collapse").find(".btn").parent().click(function(){
+        $(this).toggleClass("filter-enabled");
+    });
+    */
 
 });

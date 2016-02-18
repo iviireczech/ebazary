@@ -23,7 +23,7 @@
 
     <script th:src="@{js/script.js}" src="../static/js/script.js"></script>
 
-    <title>ebazary.cz</title>
+    <title>eBazary</title>
 </head>
 <body>
     <div class="vcenter">
@@ -40,7 +40,7 @@
                             <div class="input-group col-md-12 col-xs-12">
                                 <input id="search-input" type="text" class="form-control input-lg" th:field="*{query}" placeholder="Co hledáte?"/>
                                 <div class="input-group-btn btn-group-lg">
-                                    <button class="btn btn-default" type="button" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+                                    <button id="filter-collapse-btn" class="btn btn-default" type="button" data-toggle="collapse" data-target="#filter-collapse" aria-expanded="false" aria-controls="collapseExample">
                                         <span class="caret"></span>
                                     </button>
                                 </div>
@@ -51,17 +51,19 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="collapse" id="collapseExample">
-                            <select th:field="*{region}" class="selectpicker form-control no-right-border btn-group-lg"
-                                    data-live-search="true" data-size="8" data-dropup-auto="false" data-width="fit" title="Celá ČR">
-                                <option th:each="region : ${regions}" th:text="${region.getName()}" th:value="${region}">
-                                </option>
-                            </select>
-                            <select th:field="*{category}" class="selectpicker form-control no-right-border btn-group-lg"
-                                    data-live-search="true" data-size="8" data-dropup-auto="false" data-width="fit" title="Všechny kategorie">
-                                <option th:each="category : ${categories}" th:text="${category.getName()}" th:value="${category}">
-                                </option>
-                            </select>
+                        <div id="filter-collapse" class="collapse row">
+                            <div class="btn-group btn-group-justified">
+                                <select th:field="*{region}" class="selectpicker form-control btn-group-lg"
+                                        data-live-search="true" data-size="8" data-dropup-auto="false" data-width="fit" title="Celá ČR">
+                                    <option th:each="region : ${regions}" th:text="${region.getName()}" th:value="${region}">
+                                    </option>
+                                </select>
+                                <select th:field="*{category}" class="selectpicker form-control btn-group-lg"
+                                        data-live-search="true" data-size="8" data-dropup-auto="false" data-width="fit" title="Všechny kategorie">
+                                    <option th:each="category : ${categories}" th:text="${category.getName()}" th:value="${category}">
+                                    </option>
+                                </select>
+                            </div>
                         </div>
                     </form>
                 </div>
